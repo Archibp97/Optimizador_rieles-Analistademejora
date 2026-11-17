@@ -1,0 +1,981 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Optimizador de Rieles — Panorama Persianas</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<style>
+  :root{--bg:#fff;--bg2:#f5f5f4;--bg3:#efefed;--text:#1c1c1a;--text2:#6b6b67;--text3:#9b9b96;--border:rgba(0,0,0,0.12);--border2:rgba(0,0,0,0.25);--green:#1D9E75;--gl:#E1F5EE;--gt:#085041;--blue:#378ADD;--bl:#E6F1FB;--bt:#0C447C;--red:#E24B4A;--rl:#FCEBEB;--rt:#791F1F;--amber:#BA7517;--al:#FAEEDA;--at:#633806;--r:10px;--rs:6px;}
+  @media(prefers-color-scheme:dark){:root{--bg:#1e1e1c;--bg2:#2a2a28;--bg3:#323230;--text:#f0ede8;--text2:#a0a09a;--text3:#6b6b65;--border:rgba(255,255,255,0.1);--border2:rgba(255,255,255,0.22);--gl:#04342C;--gt:#9FE1CB;--bl:#042C53;--bt:#B5D4F4;--rl:#501313;--rt:#F7C1C1;--al:#412402;--at:#FAC775;}}
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif;background:var(--bg3);color:var(--text);font-size:14px;line-height:1.5;}
+  a{color:var(--blue)}
+  .titlebar{background:var(--bg);border-bottom:0.5px solid var(--border);padding:12px 24px;display:flex;align-items:center;gap:12px;position:sticky;top:0;z-index:100;flex-wrap:wrap;}
+  .ticon{width:28px;height:28px;background:var(--green);border-radius:6px;display:flex;align-items:center;justify-content:center;}
+  .ticon svg{width:16px;height:16px;stroke:white;fill:none;stroke-width:2;stroke-linecap:round;}
+  .titlebar h1{font-size:15px;font-weight:600;}
+  .nav-tabs{margin-left:auto;display:flex;gap:4px;flex-wrap:wrap;}
+  .nav-tab{padding:6px 14px;border-radius:var(--rs);border:0.5px solid var(--border2);background:var(--bg);color:var(--text2);font-size:13px;cursor:pointer;}
+  .nav-tab.active{background:var(--green);color:white;border-color:transparent;}
+  .nav-tab .cnt{display:inline-block;min-width:18px;padding:0 5px;margin-left:4px;border-radius:99px;background:var(--amber);color:#fff;font-size:11px;font-weight:700;}
+  .sync-dot{width:8px;height:8px;border-radius:50%;background:var(--text3);flex-shrink:0;}
+  .sync-dot.ok{background:var(--green);}.sync-dot.error{background:var(--red);}
+  .inv-badge{background:var(--bl);color:var(--bt);font-size:12px;font-weight:500;padding:4px 12px;border-radius:99px;}
+  .user-box{font-size:12px;color:var(--text2);display:flex;gap:8px;align-items:center;}
+  .setup-banner{background:var(--bg);border:1.5px solid var(--blue);border-radius:var(--r);padding:20px 24px;margin:24px auto;max-width:640px;}
+  .setup-banner h2{font-size:15px;font-weight:600;margin-bottom:12px;}
+  .step{display:flex;gap:12px;align-items:flex-start;font-size:13px;margin-bottom:10px;}
+  .step-num{width:22px;height:22px;border-radius:50%;background:var(--blue);color:white;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px;}
+  .cfg-inputs{display:grid;gap:10px;margin-top:14px;}
+  .btn-connect{margin-top:10px;width:100%;padding:10px;background:var(--blue);color:white;border:none;border-radius:var(--rs);font-size:14px;font-weight:600;cursor:pointer;}
+  .conn-error{color:var(--red);font-size:12px;margin-top:6px;min-height:14px;}
+  .page{display:none;max-width:1100px;margin:0 auto;padding:24px 20px 60px;}
+  .page.active{display:block;}
+  .card{background:var(--bg);border:0.5px solid var(--border);border-radius:var(--r);padding:16px 18px;margin-bottom:16px;}
+  .card-title{font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:12px;}
+  .two-col{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+  @media(max-width:760px){.two-col{grid-template-columns:1fr;}}
+  input[type=number],input[type=text],input[type=email],input[type=password],textarea,select{width:100%;padding:8px 10px;border:0.5px solid var(--border2);border-radius:var(--rs);background:var(--bg2);color:var(--text);font-size:13px;font-family:inherit;outline:none;}
+  input:focus,textarea:focus,select:focus{border-color:var(--green);box-shadow:0 0 0 3px rgba(29,158,117,0.15);}
+  textarea{height:80px;resize:vertical;font-family:'Consolas',monospace;font-size:12px;}
+  .row{display:flex;gap:8px;margin-bottom:8px;flex-wrap:wrap;}.row>*{flex:1;min-width:90px;}
+  button{cursor:pointer;font-family:inherit;font-size:13px;border-radius:var(--rs);border:0.5px solid var(--border2);background:var(--bg);color:var(--text);padding:8px 14px;transition:background 0.15s;}
+  button:hover{background:var(--bg2);}button:active{transform:scale(0.98);}
+  button:disabled{opacity:.5;cursor:not-allowed;}
+  .btn-green{background:var(--green);color:white;border-color:transparent;font-weight:500;}.btn-green:hover{background:#178a64;}
+  .btn-blue{background:var(--blue);color:white;border-color:transparent;font-weight:500;}.btn-blue:hover{background:#2a75c7;}
+  .btn-red{background:var(--red);color:white;border-color:transparent;font-weight:500;}.btn-red:hover{background:#c43d3c;}
+  .btn-dark{background:var(--text);color:var(--bg);border-color:transparent;font-weight:600;}
+  .btn-run{width:100%;padding:12px;font-size:15px;font-weight:600;margin:4px 0 16px;background:var(--green);color:white;border:none;border-radius:var(--r);}.btn-run:hover{background:#178a64;}
+  .btn-sm{padding:3px 9px;font-size:12px;border-radius:5px;}
+  .hint{font-size:12px;color:var(--text3);margin:4px 0 8px;}
+  .err{color:var(--red);font-size:12px;margin-top:4px;min-height:14px;}
+  .ok-txt{color:var(--green);font-size:12px;margin-top:4px;min-height:14px;}
+  .upload-zone{border:1.5px dashed var(--border2);border-radius:var(--rs);padding:16px;text-align:center;cursor:pointer;transition:border-color .2s,background .2s;margin-bottom:8px;}
+  .upload-zone:hover,.upload-zone.dragover{border-color:var(--green);background:var(--gl);}
+  .upload-zone input[type=file]{display:none;}
+  .upload-icon{font-size:22px;margin-bottom:4px;}
+  .upload-label{font-size:12px;color:var(--text2);}
+  .scroll{overflow-x:auto;max-width:100%;}
+  table.tb{border-collapse:collapse;width:100%;font-size:13px;}
+  table.tb th,table.tb td{border-bottom:0.5px solid var(--border);padding:6px 8px;text-align:left;white-space:nowrap;}
+  table.tb th{font-size:11px;color:var(--text3);font-weight:600;text-transform:uppercase;letter-spacing:.04em;}
+  table.tb td.n{text-align:right;font-variant-numeric:tabular-nums;}
+  table.tb tr.tot td{font-weight:700;border-top:1.5px solid var(--text);}
+  .badge{font-size:11px;font-weight:600;padding:2px 8px;border-radius:99px;display:inline-block;}
+  .badge.green{background:var(--gl);color:var(--gt);}.badge.blue{background:var(--bl);color:var(--bt);}.badge.red{background:var(--rl);color:var(--rt);}.badge.amber{background:var(--al);color:var(--at);}.badge.gray{background:var(--bg3);color:var(--text2);}
+  .metrics{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin:4px 0 16px;}
+  @media(max-width:760px){.metrics{grid-template-columns:1fr 1fr;}}
+  .metric{background:var(--bg);border:0.5px solid var(--border);border-radius:var(--rs);padding:12px 14px;}
+  .metric .ml{font-size:11px;color:var(--text2);margin-bottom:3px;}.metric .mv{font-size:22px;font-weight:600;}.metric .ms{font-size:11px;color:var(--text3);margin-top:1px;}
+  .section-title{font-size:14px;font-weight:600;margin:18px 0 8px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
+  .color-section{border:1.5px solid var(--green);border-radius:var(--r);padding:14px 16px;margin-bottom:12px;background:rgba(29,158,117,0.03);}
+  .color-title{font-size:14px;font-weight:700;margin-bottom:10px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
+  .color-title .sum{font-size:12px;font-weight:400;color:var(--text2);display:flex;gap:12px;flex-wrap:wrap;}
+  .paq-title{font-size:13px;font-weight:700;color:var(--text2);margin:14px 0 6px;text-transform:uppercase;letter-spacing:.04em;}
+  .tube-card{background:var(--bg);border:0.5px solid var(--border);border-radius:var(--rs);padding:12px 14px;margin-bottom:8px;}
+  .tube-card.fi{border-left:3px solid var(--blue);}
+  .tube-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;gap:8px;flex-wrap:wrap;}
+  .tube-name{font-size:13px;font-weight:600;display:flex;align-items:center;gap:6px;flex-wrap:wrap;}
+  .tube-meta{font-size:12px;color:var(--text2);text-align:right;}
+  .tube-bar{height:24px;background:var(--bg3);border-radius:4px;overflow:hidden;display:flex;margin-bottom:8px;}
+  .seg{height:100%;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:600;overflow:hidden;white-space:nowrap;}
+  .seg.used{background:var(--green);color:white;}.seg.ret{background:var(--blue);color:white;}.seg.waste{background:var(--bg3);border-left:1px dashed var(--border2);color:var(--text3);}
+  .cuts-wrap{display:flex;flex-wrap:wrap;gap:5px;}
+  .pill{background:var(--bg2);border:0.5px solid var(--border);border-radius:99px;padding:3px 9px;font-size:12px;color:var(--text2);}
+  .pill .o{color:var(--blue);font-size:10px;font-weight:600;margin-left:4px;}
+  .motivo{font-size:11.5px;color:var(--text3);margin-top:6px;}
+  .empty{text-align:center;padding:20px;color:var(--text3);font-size:13px;}
+  .save-banner{background:var(--gl);color:var(--gt);border-radius:var(--r);padding:14px 18px;font-size:13px;font-weight:500;margin:12px 0;}
+  .warn-banner{background:var(--al);color:var(--at);border-radius:var(--r);padding:12px 16px;font-size:13px;margin:12px 0;}
+  .period-tabs,.filter-bar{display:flex;gap:6px;margin-bottom:14px;flex-wrap:wrap;}
+  .period-tab,.filter-btn{padding:5px 14px;border-radius:99px;border:0.5px solid var(--border2);background:var(--bg);color:var(--text2);font-size:12.5px;cursor:pointer;}
+  .period-tab.active,.filter-btn.active{background:var(--green);color:white;border-color:transparent;}
+  .charts-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px;}
+  @media(max-width:760px){.charts-grid{grid-template-columns:1fr;}}
+  .chart-card{background:var(--bg);border:0.5px solid var(--border);border-radius:var(--r);padding:16px 18px;}
+  .chart-card.full{grid-column:1/-1;}
+  .chart-title{font-size:12px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:14px;}
+  .chart-wrap{position:relative;height:220px;}
+  .lote-row{background:var(--bg);border:0.5px solid var(--border);border-radius:var(--r);margin-bottom:8px;overflow:hidden;}
+  .lote-header{display:flex;justify-content:space-between;align-items:center;padding:12px 16px;cursor:pointer;gap:12px;flex-wrap:wrap;}
+  .lote-header:hover{background:var(--bg2);}
+  .lote-info{display:flex;align-items:center;gap:8px;flex:1;flex-wrap:wrap;}
+  .lote-actions{display:flex;gap:6px;align-items:center;flex-wrap:wrap;}
+  .lote-body{display:none;border-top:0.5px solid var(--border);padding:14px 16px;background:var(--bg2);}
+  .lote-body.open{display:block;}
+  .aprov-pill{display:inline-block;padding:2px 8px;border-radius:99px;font-size:12px;font-weight:600;}
+  .aprov-high{background:var(--gl);color:var(--gt);}.aprov-mid{background:var(--al);color:var(--at);}.aprov-low{background:var(--rl);color:var(--rt);}
+  @keyframes spin{to{transform:rotate(360deg);}}
+  .spinner{width:16px;height:16px;border:2px solid var(--border);border-top-color:var(--green);border-radius:50%;animation:spin 0.7s linear infinite;}
+  .loading{display:flex;align-items:center;gap:8px;color:var(--text3);font-size:13px;padding:12px 0;}
+  .modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:1000;align-items:center;justify-content:center;}
+  .modal-overlay.open{display:flex;}
+  .modal{background:var(--bg);border-radius:var(--r);padding:24px;max-width:440px;width:90%;}
+  .modal h3{font-size:16px;font-weight:600;margin-bottom:8px;}.modal p{font-size:13px;color:var(--text2);margin-bottom:20px;}
+  .modal-btns{display:flex;gap:8px;justify-content:flex-end;}
+  .toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#1D9E75;color:white;padding:10px 22px;border-radius:8px;font-size:13px;font-weight:500;z-index:9999;box-shadow:0 4px 16px rgba(0,0,0,0.25);transition:opacity .3s;}
+  .toast.error{background:var(--red);}
+  .chips{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;}
+  .chip-color{background:var(--bg);border:0.5px solid var(--border);border-radius:var(--rs);padding:8px 12px;font-size:12px;}
+  .chip-color b{font-size:15px;display:block;}
+  label.f{display:grid;grid-template-columns:1fr 140px;align-items:center;gap:10px;margin:8px 0;font-size:13px;}
+  .preview-wrap{background:var(--bg3);border-radius:var(--r);padding:14px;overflow:auto;margin-top:10px;}
+
+  /* ===== HOJA DE CORTE (blanco y negro, igual a la macro) ===== */
+  .paper{background:#fff;color:#000;font-family:Arial,Helvetica,sans-serif;padding:20px 22px 28px;min-width:820px;}
+  .paper .hd{display:flex;justify-content:space-between;align-items:flex-end;}
+  .paper h3{margin:0;font-size:30px;font-weight:700;}
+  .paper .fecha{font-weight:700;font-size:16px;text-align:right;}
+  .paper .sub{font-size:12px;color:#555;margin:2px 0 14px;}
+  .paper .resumen{border:2px solid #000;background:#F2F2F2;text-align:center;font-weight:700;font-size:18px;padding:9px;margin-bottom:18px;}
+  .paper .resumen span{margin:0 22px;white-space:nowrap;display:inline-block;}
+  .paper table{border-collapse:collapse;width:100%;}
+  .paper th{background:#D9D9D9;font-size:12.5px;padding:8px 6px;border-top:2px solid #000;border-bottom:2px solid #000;text-align:center;}
+  .paper th.sep,.paper td.sep{background:#fff;border:0;width:14px;padding:0;}
+  .paper td{text-align:center;padding:0 6px;}
+  .paper tr.paq td{background:#404040;color:#fff;font-weight:700;font-size:20px;text-align:left;padding:8px 12px;height:40px;}
+  .paper tr.pz td{font-weight:700;font-size:17px;text-align:left;padding:7px 12px;height:38px;border-top:3px solid #000;}
+  .paper tr.pz.retal td{background:#D9D9D9;}
+  .paper tr.pz.riel td{background:#F2F2F2;}
+  .paper tr.cut td{height:52px;font-size:15px;border-bottom:1px solid #999;}
+  .paper tr.cut td.sep{border-bottom:0;}
+  .paper tr.cut td.dest{font-size:19px;font-weight:700;}
+  .paper tr.cut td.med{font-size:28px;font-weight:700;}
+  .paper tr.cut td.ok{font-size:24px;}
+  .paper tr.ft td{text-align:left;padding:7px 12px;height:36px;border-bottom:3px solid #000;font-size:15px;font-style:italic;color:#404040;border-top:1px solid #999;}
+  .paper tr.ft.guardar td{font-style:normal;color:#000;font-weight:700;font-size:16px;border-top:3px double #000;}
+  .paper tr.gap td{height:32px;border:0;}
+  .paper tr.rev td{text-align:left;font-weight:700;padding:6px 12px;height:30px;}
+  #print-area{display:none;}
+  @media print{
+    @page{size:letter landscape;margin:8mm;}
+    body{background:#fff;}
+    body > *:not(#print-area){display:none !important;}
+    #print-area{display:block !important;}
+    .paper{padding:0;min-width:0;}
+    .paper tr{break-inside:avoid;}
+    .paper thead{display:table-header-group;}
+  }
+</style>
+</head>
+<body>
+
+<div class="titlebar" id="titlebar">
+  <div class="ticon"><svg viewBox="0 0 24 24"><path d="M3 12h18"/><path d="M7 8v8"/><path d="M17 8v8"/></svg></div>
+  <h1>Optimizador de Rieles</h1>
+  <div class="nav-tabs" id="nav" style="display:none">
+    <button class="nav-tab active" data-page="optimizador">Optimizador</button>
+    <button class="nav-tab" data-page="pendientes">Por cortar <span class="cnt" id="cnt-pend" hidden></span></button>
+    <button class="nav-tab" data-page="retales">Retales</button>
+    <button class="nav-tab" data-page="historico">Histórico</button>
+    <button class="nav-tab" data-page="ajustes">Ajustes</button>
+  </div>
+  <div style="display:flex;align-items:center;gap:10px;margin-left:12px;">
+    <div class="sync-dot" id="sync-dot"></div>
+    <div class="inv-badge" id="inv-counter">Sin conexión</div>
+    <div class="user-box" id="user-box" hidden><span id="user-mail"></span><button class="btn-sm" id="btn-salir">Salir</button></div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modal">
+  <div class="modal">
+    <h3 id="modal-title">Confirmar</h3><p id="modal-msg"></p>
+    <div class="modal-btns"><button id="modal-cancel">Cancelar</button><button class="btn-red" id="modal-confirm">Aceptar</button></div>
+  </div>
+</div>
+
+<!-- CONEXION -->
+<div class="setup-banner" id="setup-banner" hidden>
+  <h2>Conectar con Supabase</h2>
+  <div class="step"><div class="step-num">1</div><div>En <a href="https://supabase.com" target="_blank" rel="noopener">supabase.com</a> abre tu proyecto y ejecuta el archivo <b>supabase_rieles.sql</b> en <b>SQL Editor</b>.</div></div>
+  <div class="step"><div class="step-num">2</div><div>En <b>Authentication → Users</b> crea los usuarios (correo y contraseña) de quienes van a usar la app.</div></div>
+  <div class="step"><div class="step-num">3</div><div>En <b>Project Settings → API</b> copia la <b>Project URL</b> y la clave <b>anon public</b> y pégalas aquí.</div></div>
+  <div class="cfg-inputs">
+    <input type="text" id="cfg-url" placeholder="https://xxxxxxxxxxxx.supabase.co"/>
+    <input type="text" id="cfg-key" placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."/>
+  </div>
+  <button class="btn-connect" id="btn-conectar">Conectar</button>
+  <div id="conn-error" class="conn-error"></div>
+</div>
+
+<!-- INGRESO -->
+<div class="setup-banner" id="login-banner" hidden>
+  <h2>Iniciar sesión</h2>
+  <div class="cfg-inputs">
+    <input type="email" id="login-mail" placeholder="correo@empresa.com" autocomplete="username"/>
+    <input type="password" id="login-pass" placeholder="Contraseña" autocomplete="current-password"/>
+  </div>
+  <button class="btn-connect" id="btn-login">Entrar</button>
+  <div id="login-error" class="conn-error"></div>
+  <div class="hint" style="margin-top:10px"><a href="#" id="btn-cambiar-proyecto">Conectar a otro proyecto de Supabase</a></div>
+</div>
+
+<!-- OPTIMIZADOR -->
+<div class="page" id="page-optimizador">
+  <div class="card">
+    <div class="card-title">Identificación del lote</div>
+    <div class="row">
+      <select id="linea-select"><option value="SHEER">SHEER</option><option value="ENROLLABLE">ENROLLABLE</option></select>
+      <input type="text" id="paquete-input" placeholder="Paquete: PAQ-1, PAQ-2..." style="text-transform:uppercase;" maxlength="30"/>
+    </div>
+    <div class="hint" id="info-largos"></div>
+  </div>
+
+  <div class="two-col">
+    <div class="card">
+      <div class="card-title">Cargar cortes desde Excel</div>
+      <div class="upload-zone" id="drop">
+        <input type="file" id="file" accept=".xlsx,.xls,.xlsm,.csv"/>
+        <div class="upload-icon">📂</div>
+        <div class="upload-label"><strong>Subir Excel</strong> o arrastrar aquí<br><span style="font-size:11px;color:var(--text3)">Columnas: PEDIDO · ORDEN · COLOR RIEL · ANCHO RIEL · TIPO (o columna T) · TUBO · ANCHO TUBO · PAQUETE (opcional)</span></div>
+      </div>
+      <div class="hint">O copia las columnas en Excel (con la fila de encabezados) y pégalas aquí:</div>
+      <textarea id="pegar" placeholder="PEDIDO	ORDEN	COLOR RIEL	ANCHO RIEL	TIPO	TUBO	ANCHO TUBO"></textarea>
+      <div class="row" style="margin-top:8px"><button class="btn-green" id="btn-pegar">Agregar lo pegado</button></div>
+      <div id="carga-status" class="ok-txt"></div>
+    </div>
+    <div class="card">
+      <div class="card-title">Agregar un corte a mano</div>
+      <div class="row">
+        <input type="text" id="m-pedido" placeholder="Pedido"/>
+        <input type="text" id="m-orden" placeholder="Orden"/>
+      </div>
+      <div class="row">
+        <input type="text" id="m-color" placeholder="Color riel" list="lista-colores" style="text-transform:uppercase"/>
+        <input type="text" id="m-ancho" placeholder="Ancho riel (m)" inputmode="decimal"/>
+        <select id="m-tipo"><option>NORMAL</option><option>CONTRARIAS</option></select>
+      </div>
+      <div class="row">
+        <input type="text" id="m-tubo" placeholder="Tubo"/>
+        <input type="text" id="m-anchotubo" placeholder="Ancho tubo (m)" inputmode="decimal"/>
+        <button class="btn-green" id="btn-agregar" style="flex:0 0 auto">+ Agregar</button>
+      </div>
+      <div id="m-error" class="err"></div>
+      <datalist id="lista-colores"></datalist>
+    </div>
+  </div>
+
+  <div class="card">
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:8px">
+      <div class="card-title" style="margin:0">Cortes cargados <span id="resumen-cortes" style="text-transform:none;letter-spacing:0;font-weight:400"></span></div>
+      <button class="btn-sm" id="btn-limpiar">Limpiar todo</button>
+    </div>
+    <div class="scroll" id="tabla-cortes"><div class="empty">Todavía no hay cortes. Sube un Excel, pega desde Excel o agrégalos a mano.</div></div>
+  </div>
+
+  <button class="btn-run" id="btn-optimizar">✂ Optimizar cortes</button>
+  <div id="results"></div>
+</div>
+
+<!-- POR CORTAR -->
+<div class="page" id="page-pendientes">
+  <div class="hint" style="margin-bottom:12px">Planes guardados que el cortador todavía no ha terminado. Imprime la hoja, y cuando termine pulsa <b>Ya se cortó</b>. Si un retal no estaba en el estante: márcalo como “No estaba”, anula el plan y vuelve a optimizar.</div>
+  <div id="lista-pendientes"><div class="loading"><div class="spinner"></div>Cargando...</div></div>
+</div>
+
+<!-- RETALES -->
+<div class="page" id="page-retales">
+  <div class="chips" id="chips-colores"></div>
+  <div class="card">
+    <div class="card-title">Agregar un retal que ya está en el estante</div>
+    <div class="row">
+      <input type="text" id="n-color" placeholder="Color riel" list="lista-colores" style="text-transform:uppercase"/>
+      <input type="text" id="n-largo" placeholder="Largo (m)" inputmode="decimal"/>
+      <input type="number" id="n-dias" placeholder="Días en el estante" min="0" value="0"/>
+      <button class="btn-green" id="btn-nuevo-retal" style="flex:0 0 auto">+ Agregar retal</button>
+    </div>
+    <div id="n-error" class="err"></div>
+  </div>
+  <div class="card">
+    <div class="row" style="align-items:center">
+      <select id="f-estado">
+        <option value="DISPONIBLE">Disponibles</option>
+        <option value="RESERVADO">Reservados (por cortar)</option>
+        <option value="POR CORTAR">Salen en planes por cortar</option>
+        <option value="USADO">Usados</option>
+        <option value="NO ESTABA">No estaban</option>
+        <option value="DESCARTADO">Descartados</option>
+        <option value="">Todos</option>
+      </select>
+      <select id="f-color"><option value="">Todos los colores</option></select>
+      <input type="text" id="f-buscar" placeholder="Buscar código R-0001"/>
+    </div>
+    <div class="scroll" id="tabla-retales"></div>
+  </div>
+</div>
+
+<!-- HISTORICO -->
+<div class="page" id="page-historico">
+  <div class="period-tabs" id="periodos">
+    <button class="period-tab active" data-p="dia">Por día</button>
+    <button class="period-tab" data-p="semana">Por semana</button>
+    <button class="period-tab" data-p="mes">Por mes</button>
+  </div>
+  <div class="filter-bar" id="filtros-linea">
+    <button class="filter-btn active" data-l="todos">Todas las líneas</button>
+    <button class="filter-btn" data-l="SHEER">SHEER</button>
+    <button class="filter-btn" data-l="ENROLLABLE">ENROLLABLE</button>
+  </div>
+  <div id="hist-metrics" class="metrics"></div>
+  <div class="charts-grid">
+    <div class="chart-card full"><div class="chart-title">% aprovechamiento (SHEER vs ENROLLABLE)</div><div class="chart-wrap"><canvas id="chart-aprov"></canvas></div></div>
+    <div class="chart-card"><div class="chart-title">Rieles nuevos usados</div><div class="chart-wrap"><canvas id="chart-rieles"></canvas></div></div>
+    <div class="chart-card"><div class="chart-title">Metros desperdiciados</div><div class="chart-wrap"><canvas id="chart-desp"></canvas></div></div>
+  </div>
+  <div class="card"><div class="card-title">Aprovechamiento por color</div><div class="scroll" id="hist-colores"></div></div>
+  <div class="card"><div class="card-title">Lotes cortados</div><div id="hist-lotes"></div></div>
+</div>
+
+<!-- AJUSTES -->
+<div class="page" id="page-ajustes">
+  <div class="card" style="max-width:560px">
+    <div class="card-title">Ajustes (iguales para todos los equipos)</div>
+    <label class="f">Riel NORMAL (m)<input type="text" id="a-normal" inputmode="decimal"></label>
+    <label class="f">Riel de otros tipos (m)<input type="text" id="a-otro" inputmode="decimal"></label>
+    <label class="f">Retal mínimo para guardar (m)<input type="text" id="a-retal" inputmode="decimal"></label>
+    <label class="f">Desecho máximo al usar un retal (m)<input type="text" id="a-tol" inputmode="decimal"></label>
+    <label class="f">Días para usar un retal viejo<input type="number" id="a-edad" min="1"></label>
+    <label class="f">Espesor de la sierra (m)<input type="text" id="a-sierra" inputmode="decimal"></label>
+    <div class="row" style="margin-top:12px"><button class="btn-green" id="btn-guardar-ajustes">Guardar ajustes</button></div>
+    <div class="hint">Un retal se usa si lo que se bota es menor o igual al desecho máximo, o si lo que sobra vuelve a ser retal. Los retales con más días que el límite se usan aunque boten más.</div>
+  </div>
+</div>
+
+<div id="print-area"></div>
+
+<script>
+(function(){
+'use strict'
+const CFG_KEY='rieles_supabase_config'
+const DEF={largo_normal:5.77,largo_otro:6,retal_min:0.8,tolerancia:0.2,edad_dias:15,sierra:0}
+
+let sb=null, api=null, aj={...DEF}
+let cortes=[], resultado=null
+let retalesTodos=[], lotesHist=[], periodo='dia', filtroLinea='todos'
+let charts={}
+
+/* ===================== utilidades ===================== */
+const $=id=>document.getElementById(id)
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))
+const fm=mm=>(Math.round(mm)/1000).toFixed(3).replace('.',',')
+const pct=x=>(x*100).toFixed(1).replace('.',',')+' %'
+const norm=s=>String(s??'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toUpperCase().trim()
+function num(s){
+  if(typeof s==='number')return s
+  s=String(s??'').trim().replace(/\s/g,'')
+  if(!s)return NaN
+  if(s.includes(',')&&s.includes('.')){
+    if(s.lastIndexOf(',')>s.lastIndexOf('.'))s=s.replace(/\./g,'').replace(',','.');else s=s.replace(/,/g,'')
+  }else s=s.replace(',','.')
+  return parseFloat(s)
+}
+const aMM=v=>{const n=num(v);return isNaN(n)?0:Math.round(n*1000)}
+const hoyISO=()=>{const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')}
+const diasDesde=f=>f?Math.max(0,Math.round((Date.parse(hoyISO())-Date.parse(String(f).slice(0,10)))/86400000)):0
+const fechaCorta=f=>new Date(f).toLocaleString('es-CO',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'})
+const fechaDia=f=>new Date(f).toLocaleDateString('es-CO',{day:'2-digit',month:'2-digit',year:'numeric'})
+const codTxt=c=>/^~N(\d+)~$/.test(c||'')?'nuevo '+c.slice(2,-1):c
+function setSync(s){$('sync-dot').className='sync-dot'+(s==='ok'?' ok':s==='error'?' error':'')}
+function toast(msg,error){const t=document.createElement('div');t.className='toast'+(error?' error':'');t.textContent=msg;document.body.appendChild(t);setTimeout(()=>{t.style.opacity='0';setTimeout(()=>t.remove(),300)},3200)}
+let modalCb=null
+function confirmar(titulo,msg,boton,cb,clase){
+  $('modal-title').textContent=titulo;$('modal-msg').textContent=msg
+  const b=$('modal-confirm');b.textContent=boton;b.className=clase||'btn-red'
+  modalCb=cb;$('modal').classList.add('open')
+}
+$('modal-cancel').onclick=()=>{$('modal').classList.remove('open');modalCb=null}
+$('modal-confirm').onclick=async()=>{const cb=modalCb;$('modal').classList.remove('open');modalCb=null;if(cb)await cb()}
+async function seguro(fn,msgError){
+  try{setSync('');const r=await fn();setSync('ok');return r}
+  catch(e){setSync('error');console.error(e);toast((msgError||'Error')+': '+(e.message||e),true);throw e}
+}
+
+/* ===================== acceso a Supabase ===================== */
+function crearApi(sb){
+  const ok=({data,error})=>{if(error)throw error;return data}
+  return{
+    ajustes:async()=>ok(await sb.from('ajustes').select('*').eq('id',1).single()),
+    guardarAjustes:async a=>ok(await sb.from('ajustes').update(a).eq('id',1)),
+    retales:async()=>ok(await sb.from('retales').select('*').order('id',{ascending:false}).limit(3000)),
+    disponibles:async()=>ok(await sb.from('retales').select('*').eq('estado','DISPONIBLE')),
+    retalesDeLote:async id=>ok(await sb.from('retales').select('*').or(`lote_uso.eq.${id},lote_origen.eq.${id}`).order('codigo')),
+    estadoRetal:async(id,estado)=>ok(await sb.from('retales').update({estado}).eq('id',id)),
+    crearRetal:async(color,mm,dias)=>ok(await sb.rpc('crear_retal',{p_color:color,p_largo_mm:mm,p_dias:dias})),
+    guardarPlan:async(l,r,n)=>ok(await sb.rpc('guardar_plan',{p_lote:l,p_reservar:r,p_nuevos:n})),
+    lotes:async estado=>{let q=sb.from('lotes').select('*').order('fecha',{ascending:false}).limit(2000);if(estado)q=q.eq('estado',estado);return ok(await q)},
+    confirmarLote:async id=>ok(await sb.rpc('confirmar_lote',{p_lote:id})),
+    anularLote:async id=>ok(await sb.rpc('anular_lote',{p_lote:id}))
+  }
+}
+
+/* ===================== mochila 0-1 ===================== */
+function mochila(w,cap){
+  const m=w.length,dp=new Int32Array(cap+1),toma=[]
+  for(let k=0;k<m;k++){
+    const t=new Uint8Array(cap+1),x=w[k]
+    if(x<=cap)for(let c=cap;c>=x;c--){if(dp[c-x]+x>dp[c]){dp[c]=dp[c-x]+x;t[c]=1}}
+    toma.push(t)
+  }
+  const sel=[];let c=cap
+  for(let k=m-1;k>=0;k--){if(toma[k][c]){sel.push(k);c-=w[k]}}
+  return sel
+}
+
+/* ===================== el criterio: riel nuevo o retal ===================== */
+function planificar(cortes,disponibles,aj){
+  const K=Math.round(aj.sierra*1000),R=Math.round(aj.retal_min*1000),TOL=Math.round(aj.tolerancia*1000)
+  const capN=Math.round(aj.largo_normal*1000),capO=Math.round(aj.largo_otro*1000)
+  const pool=disponibles.map(r=>({id:r.id,codigo:r.codigo,color:norm(r.color),mm:r.largo_mm,edad:diasDesde(r.fecha),usado:false,nuevo:false,usadoEn:'',origen:''}))
+  let nTmp=0,nPieza=0
+  const revisar=[],grupos=new Map()
+  cortes.forEach(c=>{
+    const tipo=norm(c.tipo),cap=!tipo?0:(tipo==='NORMAL'?capN:capO),color=norm(c.color)
+    if(!(c.ancho_mm>0)||!color){revisar.push({c,motivo:'Sin color o sin ancho'});return}
+    if(!cap){revisar.push({c,motivo:'Sin tipo (NORMAL / CONTRARIAS)'});return}
+    if(c.ancho_mm>cap){revisar.push({c,motivo:'El corte no cabe en un riel de '+fm(cap)+' m'});return}
+    const paq=String(c.paquete||'').trim().toUpperCase()
+    const key=paq+'|'+color+'|'+String(cap).padStart(5,'0')
+    if(!grupos.has(key))grupos.set(key,{paq,color,cap,items:[]})
+    grupos.get(key).items.push(c)
+  })
+  function accionPara(rem,color,origen){
+    if(rem>=R){nTmp++;const tmp='~N'+nTmp+'~'
+      pool.push({id:null,codigo:tmp,color,mm:rem,edad:0,usado:false,nuevo:true,usadoEn:'',origen})
+      return{tipo:'GUARDAR',cod:tmp,mm:rem}}
+    return rem>0?{tipo:'DESECHAR'}:{tipo:'NADA'}
+  }
+  const cutInfo=c=>({pedido:c.pedido,orden:c.orden,color:norm(c.color),ancho_mm:c.ancho_mm,tubo:c.tubo,ancho_tubo:c.ancho_tubo})
+  const piezas=[]
+  ;[...grupos.keys()].sort((a,b)=>a.localeCompare(b,'es')).forEach(k=>{
+    const g=grupos.get(k);let pend=g.items.slice()
+    // Fase 1: retales
+    while(pend.length){
+      const minMM=Math.min(...pend.map(p=>p.ancho_mm));let best=null
+      for(const r of pool){
+        if(r.usado||r.color!==g.color||r.mm<minMM)continue
+        const sel=mochila(pend.map(p=>p.ancho_mm+K),r.mm+K);if(!sel.length)continue
+        const sum=sel.reduce((a,j)=>a+pend[j].ancho_mm,0),rem=r.mm-sum-K*(sel.length-1)
+        const w=rem>=R?0:rem,viejo=r.edad>=aj.edad_dias
+        if(!(w<=TOL||viejo))continue
+        if(!best||w<best.w||(w===best.w&&sum>best.sum)||(w===best.w&&sum===best.sum&&r.mm<best.r.mm))
+          best={r,sel,sum,rem,w,viejo:viejo&&w>TOL}
+      }
+      if(!best)break
+      nPieza++;best.r.usado=true;best.r.usadoEn=(g.paq||g.color)+' - pieza '+nPieza
+      const motivo=best.viejo?`Retal de ${best.r.edad} días: se usa antes de que se pierda`
+        :best.rem<=0?'Aprovecha todo el retal'
+        :best.rem>=R?'Usa el retal y lo que sobra se vuelve a guardar'
+        :`Usa el retal y solo se desechan ${fm(best.rem)} m`
+      const accion=accionPara(best.rem,g.color,'Retal '+best.r.codigo)
+      piezas.push({n:nPieza,paq:g.paq,color:g.color,tipo:'RETAL',retal:{id:best.r.id,codigo:best.r.codigo,deHoy:best.r.nuevo},
+        largo:best.r.mm,cortes:best.sel.map(j=>cutInfo(pend[j])),uso:best.sum,sobra:best.rem,accion,motivo})
+      const s=new Set(best.sel);pend=pend.filter((_,j)=>!s.has(j))
+    }
+    // Fase 2: rieles nuevos
+    let motivo=''
+    if(pend.length){
+      const minMM=Math.min(...pend.map(p=>p.ancho_mm)),delColor=pool.filter(r=>!r.usado&&r.color===g.color)
+      motivo=!delColor.length?'No hay retales de este color'
+        :!delColor.some(r=>r.mm>=minMM)?'Los retales disponibles son más cortos que los cortes'
+        :`Ningún retal sirve sin desechar más de ${fm(TOL)} m`
+    }
+    while(pend.length){
+      const sel=mochila(pend.map(p=>p.ancho_mm+K),g.cap+K);if(!sel.length)break
+      const sum=sel.reduce((a,j)=>a+pend[j].ancho_mm,0),rem=g.cap-sum-K*(sel.length-1)
+      nPieza++
+      const accion=accionPara(rem,g.color,'Riel nuevo - '+(g.paq||g.color)+' - pieza '+nPieza)
+      piezas.push({n:nPieza,paq:g.paq,color:g.color,tipo:'RIEL',largo:g.cap,cortes:sel.map(j=>cutInfo(pend[j])),uso:sum,sobra:rem,accion,motivo})
+      const s=new Set(sel);pend=pend.filter((_,j)=>!s.has(j))
+    }
+  })
+  piezas.forEach(p=>{
+    p.cortes.sort((a,b)=>b.ancho_mm-a.ancho_mm)
+    if(p.accion.tipo==='GUARDAR'){const x=pool.find(r=>r.codigo===p.accion.cod);p.accion.usadoEn=x&&x.usado?x.usadoEn:''}
+  })
+  const reservar=pool.filter(p=>!p.nuevo&&p.usado).map(p=>({id:p.id,usado_en:p.usadoEn}))
+  const nuevos=pool.filter(p=>p.nuevo).map(p=>({tmp:p.codigo,color:p.color,largo_mm:p.mm,origen:p.origen,usado_en:p.usado?p.usadoEn:''}))
+  const met=metricas(piezas)
+  return{piezas,revisar:revisar.map(x=>({motivo:x.motivo,corte:cutInfo(x.c)})),reservar,nuevos,met,
+    ajustes:{largo_normal:aj.largo_normal,largo_otro:aj.largo_otro,retal_min:aj.retal_min}}
+}
+
+// Metricas: desperdicio = lo que se bota (sobrantes cortos + sierra).
+// Material de entrada = riel nuevo + retales que salen del estante.
+function metricas(piezas){
+  const tot={rieles:0,m_riel:0,retales:0,m_retal:0,cortado:0,nuevos:0,m_nuevos:0,desp:0},porColor={}
+  piezas.forEach(p=>{
+    const a=porColor[p.color]||(porColor[p.color]={rieles:0,m_riel:0,retales:0,m_retal:0,cortado:0,nuevos:0,m_nuevos:0,desp:0})
+    for(const t of [a,tot]){
+      if(p.tipo==='RIEL'){t.rieles++;t.m_riel+=p.largo}
+      else if(!p.retal.deHoy){t.retales++;t.m_retal+=p.largo}
+      t.cortado+=p.uso
+      if(p.accion.tipo==='GUARDAR'){
+        if(!p.accion.usadoEn){t.nuevos++;t.m_nuevos+=p.accion.mm}
+        t.desp+=p.largo-p.uso-p.accion.mm
+      }else t.desp+=p.largo-p.uso
+    }
+  })
+  const aprov=t=>{const e=t.m_riel+t.m_retal;return e>0?(e-t.desp)/e:0}
+  Object.values(porColor).forEach(a=>a.aprov=aprov(a));tot.aprov=aprov(tot)
+  return{tot,porColor}
+}
+
+/* ===================== carga de cortes ===================== */
+function mapearColumnas(h){
+  const H=h.map(norm),idx=f=>H.findIndex(f)
+  const c={
+    pedido:idx(x=>x.includes('PEDIDO')),orden:idx(x=>x==='ORDEN'),paquete:idx(x=>x.includes('PAQUETE')),
+    color:idx(x=>x==='COLOR RIEL'),ancho:idx(x=>x==='ANCHO RIEL'),tipo:idx(x=>x==='TIPO'||x.startsWith('TIPO')),
+    tubo:idx(x=>x==='TUBO'),anchoTubo:idx(x=>x==='ANCHO TUBO')
+  }
+  if(c.orden<0)c.orden=idx(x=>x.includes('ORDEN'))
+  if(c.color<0)c.color=idx(x=>x.includes('COLOR'))
+  if(c.ancho<0)c.ancho=idx(x=>x.includes('ANCHO')&&!x.includes('TUBO'))
+  if(c.tipo<0&&h.length>19)c.tipoColT=true   // como la macro: tipo en la columna T
+  return c
+}
+function filasACortes(filas){
+  // busca la fila de encabezados en las primeras 15 filas
+  let hi=-1
+  for(let i=0;i<Math.min(15,filas.length);i++){
+    const H=(filas[i]||[]).map(norm)
+    if(H.some(x=>x==='ANCHO RIEL')||(H.some(x=>x.includes('ANCHO'))&&H.some(x=>x.includes('COLOR')))){hi=i;break}
+  }
+  if(hi<0)throw new Error('No encontré los encabezados COLOR RIEL y ANCHO RIEL. Incluye la fila de encabezados.')
+  const c=mapearColumnas(filas[hi].map(x=>String(x??'')))
+  if(c.color<0||c.ancho<0)throw new Error('Faltan las columnas COLOR RIEL y ANCHO RIEL.')
+  const out=[];let sinTipo=0
+  for(const f of filas.slice(hi+1)){
+    const g=k=>c[k]>=0?String(f[c[k]]??'').trim():''
+    const color=g('color'),ancho=f[c.ancho]
+    if(!color&&(ancho===''||ancho==null))continue
+    let tipo=c.tipo>=0?g('tipo'):(c.tipoColT?String(f[19]??'').trim():'')
+    if(!tipo){tipo='NORMAL';sinTipo++}
+    const at=c.anchoTubo>=0?f[c.anchoTubo]:''
+    out.push({pedido:g('pedido'),orden:g('orden'),paquete:g('paquete'),color:color.toUpperCase(),
+      ancho_mm:aMM(ancho),tipo:tipo.toUpperCase(),tubo:g('tubo'),ancho_tubo:(at===''||at==null)?'':(isNaN(num(at))?String(at):aMM(at))})
+  }
+  return{lista:out,sinTipo}
+}
+function agregarCortes(lista,sinTipo,origen){
+  const paqInput=$('paquete-input').value.trim().toUpperCase()
+  lista.forEach(c=>{if(!c.paquete)c.paquete=paqInput})
+  cortes.push(...lista)
+  const paqs=[...new Set(lista.map(c=>c.paquete).filter(Boolean))]
+  if(!paqInput&&paqs.length===1)$('paquete-input').value=paqs[0]
+  resultado=null;$('results').innerHTML=''
+  $('carga-status').textContent=`✓ ${lista.length} cortes agregados desde ${origen}`+
+    (paqs.length>1?` (${paqs.length} paquetes: cada uno se corta por separado)`:'')+
+    (sinTipo?`. ${sinTipo} sin tipo se tomaron como NORMAL.`:'.')
+  renderCortes()
+}
+function leerArchivo(file){
+  const st=$('carga-status');st.className='ok-txt';st.textContent='Leyendo archivo...'
+  const rd=new FileReader()
+  rd.onload=e=>{
+    try{
+      const wb=XLSX.read(new Uint8Array(e.target.result),{type:'array'})
+      const nombre=wb.SheetNames.find(n=>norm(n)==='PERFILERIA')||wb.SheetNames[0]
+      const filas=XLSX.utils.sheet_to_json(wb.Sheets[nombre],{header:1,defval:'',raw:true})
+      const{lista,sinTipo}=filasACortes(filas)
+      if(!lista.length)throw new Error('No encontré cortes en la hoja '+nombre+'.')
+      agregarCortes(lista,sinTipo,'"'+file.name+'"')
+    }catch(err){st.className='err';st.textContent=err.message}
+  }
+  rd.readAsArrayBuffer(file)
+}
+
+/* ===================== pantallas: optimizador ===================== */
+function renderCortes(){
+  const n=cortes.length
+  $('resumen-cortes').textContent=n?`· ${n} cortes · ${fm(cortes.reduce((a,c)=>a+(c.ancho_mm||0),0))} m`:''
+  $('tabla-cortes').innerHTML=n?`<table class="tb"><thead><tr><th>Paquete</th><th>Pedido</th><th>Orden</th><th>Color riel</th><th>Ancho riel</th><th>Tipo</th><th>Tubo</th><th>Ancho tubo</th><th></th></tr></thead><tbody>
+    ${cortes.map((c,i)=>`<tr><td>${esc(c.paquete)}</td><td>${esc(c.pedido)}</td><td>${esc(c.orden)}</td><td>${esc(c.color)}</td><td class="n"><b>${c.ancho_mm>0?fm(c.ancho_mm):'—'}</b></td><td>${esc(c.tipo)}</td><td>${esc(c.tubo)}</td><td class="n">${typeof c.ancho_tubo==='number'?fm(c.ancho_tubo):esc(c.ancho_tubo)}</td><td><button class="btn-sm" data-quitar="${i}">×</button></td></tr>`).join('')}</tbody></table>`
+    :'<div class="empty">Todavía no hay cortes. Sube un Excel, pega desde Excel o agrégalos a mano.</div>'
+  const cols=[...new Set(cortes.map(c=>norm(c.color)).concat(retalesTodos.map(r=>norm(r.color))))].filter(Boolean).sort()
+  $('lista-colores').innerHTML=cols.map(c=>`<option value="${esc(c)}">`).join('')
+}
+
+async function optimizar(){
+  if(!cortes.length){$('results').innerHTML='<div class="empty">Carga al menos un corte.</div>';return}
+  $('results').innerHTML='<div class="loading"><div class="spinner"></div>Consultando el estante y optimizando...</div>'
+  try{
+    const disp=await seguro(()=>api.disponibles(),'No se pudo leer el estante')
+    resultado=planificar(cortes,disp,aj)
+    renderResultado()
+  }catch(e){$('results').innerHTML='<div class="empty">No se pudo optimizar. Revisa la conexión.</div>'}
+}
+
+function barra(p){
+  const L=p.largo,u=p.uso/L*100,g=p.accion.tipo==='GUARDAR'?p.accion.mm/L*100:0,w=Math.max(0,100-u-g)
+  return`<div class="tube-bar"><div class="seg used" style="width:${u}%">${u>12?fm(p.uso)+' m':''}</div>
+    ${g>0?`<div class="seg ret" style="width:${g}%">${g>9?fm(p.accion.mm)+' m':''}</div>`:''}
+    ${w>0.3?`<div class="seg waste" style="width:${w}%">${w>7?fm(L-p.uso-(g?p.accion.mm:0))+' m':''}</div>`:''}</div>`
+}
+function tarjetaPieza(p){
+  const enc=p.tipo==='RETAL'
+    ?`<span class="badge blue">Retal ${esc(codTxt(p.retal.codigo))} · ${fm(p.largo)} m</span>${p.retal.deHoy?'<span class="badge gray">sale de este mismo plan</span>':''}`
+    :`<span class="badge green">Riel nuevo · ${fm(p.largo)} m</span>`
+  let sob
+  if(p.accion.tipo==='GUARDAR')sob=`<span style="color:var(--bt);font-weight:600">${fm(p.sobra)} m → guardar retal ${esc(codTxt(p.accion.cod))}${p.accion.usadoEn?' (se usa en '+esc(p.accion.usadoEn)+')':''}</span>`
+  else if(p.accion.tipo==='DESECHAR')sob=`<span style="color:var(--text3)">${fm(p.sobra)} m → desechar</span>`
+  else sob='<span style="color:var(--text3)">sin sobrante</span>'
+  return`<div class="tube-card${p.tipo==='RETAL'?' fi':''}">
+    <div class="tube-head"><div class="tube-name"><strong>Pieza ${p.n}</strong>${enc}</div><div class="tube-meta">${fm(p.uso)} m cortados · ${sob}</div></div>
+    ${barra(p)}
+    <div class="cuts-wrap">${p.cortes.map(c=>`<span class="pill"><b>${fm(c.ancho_mm)} m</b>${c.orden?`<span class="o">${esc(c.orden)}</span>`:''}</span>`).join('')}</div>
+    <div class="motivo">${esc(p.motivo)}</div></div>`
+}
+function tarjetasMetricas(t){
+  return`<div class="metrics">
+    <div class="metric"><div class="ml">Rieles nuevos</div><div class="mv">${t.rieles}</div><div class="ms">${fm(t.m_riel)} m</div></div>
+    <div class="metric"><div class="ml">Retales del estante</div><div class="mv">${t.retales}</div><div class="ms">${fm(t.m_retal)} m</div></div>
+    <div class="metric"><div class="ml">Retales nuevos</div><div class="mv">${t.nuevos}</div><div class="ms">${fm(t.m_nuevos)} m al estante</div></div>
+    <div class="metric"><div class="ml">Aprovechamiento</div><div class="mv">${pct(t.aprov)}</div><div class="ms">los retales guardados no son desperdicio</div></div>
+    <div class="metric"><div class="ml">Desperdicio</div><div class="mv">${fm(t.desp)} m</div><div class="ms">sobrantes cortos y sierra</div></div></div>`
+}
+function renderResultado(){
+  const R=resultado,linea=$('linea-select').value,paq=$('paquete-input').value.trim().toUpperCase()
+  let h=`<div class="section-title">Resultado <span class="badge gray">${esc(linea)}${paq?' · '+esc(paq):''}</span></div>`+tarjetasMetricas(R.met.tot)
+  const porColor={}
+  R.piezas.forEach(p=>{(porColor[p.color]=porColor[p.color]||[]).push(p)})
+  Object.keys(porColor).sort().forEach(col=>{
+    const m=R.met.porColor[col]
+    h+=`<div class="color-section"><div class="color-title">● ${esc(col)}<span class="sum"><span>${m.rieles} rieles nuevos</span><span>${m.retales} retales del estante</span><span>${pct(m.aprov)} aprovech.</span><span>${fm(m.desp)} m desperdicio</span></span></div>`
+    let paqAnt=null
+    porColor[col].forEach(p=>{
+      if(p.paq!==paqAnt&&new Set(porColor[col].map(x=>x.paq)).size>1){h+=`<div class="paq-title">Paquete ${esc(p.paq||'(sin paquete)')}</div>`}
+      paqAnt=p.paq;h+=tarjetaPieza(p)
+    })
+    h+='</div>'
+  })
+  if(R.revisar.length)h+=`<div class="warn-banner"><b>${R.revisar.length} cortes para revisar</b> (no entran al plan): ${R.revisar.map(r=>esc((r.corte.orden||r.corte.pedido||'sin orden')+' · '+r.motivo)).join(' · ')}</div>`
+  h+=`<div class="section-title">Hoja de corte (vista previa)</div>
+    <div class="hint">Los retales nuevos reciben su código R-0001 al guardar. Guarda el plan para imprimir la hoja definitiva.</div>
+    <div class="preview-wrap">${hojaHTML(R,{fecha:new Date().toISOString(),linea,paquete:paq})}</div>
+    <div class="row" style="margin-top:14px"><button class="btn-green" id="btn-guardar-plan" style="padding:12px;font-size:15px;font-weight:600">✓ Guardar plan, reservar retales e imprimir</button><button id="btn-descartar" style="flex:0 0 auto">Descartar</button></div>`
+  $('results').innerHTML=h
+  $('btn-guardar-plan').onclick=guardarPlan
+  $('btn-descartar').onclick=()=>{resultado=null;$('results').innerHTML=''}
+  $('results').scrollIntoView({behavior:'smooth',block:'start'})
+}
+
+async function guardarPlan(){
+  const R=resultado;if(!R)return
+  const b=$('btn-guardar-plan');b.disabled=true;b.textContent='Guardando...'
+  const t=R.met.tot
+  const lote={linea:$('linea-select').value,paquete:$('paquete-input').value.trim().toUpperCase()||[...new Set(cortes.map(c=>c.paquete).filter(Boolean))].join(', '),
+    rieles_nuevos:t.rieles,retales_usados:t.retales,retales_generados:t.nuevos,
+    metros_riel:t.m_riel/1000,metros_retal:t.m_retal/1000,metros_cortados:t.cortado/1000,metros_desperdicio:t.desp/1000,
+    aprovechamiento:Math.round(t.aprov*1000)/10,por_color:R.met.porColor,
+    plan:{piezas:R.piezas,revisar:R.revisar,ajustes:R.ajustes}}
+  try{
+    const r=await seguro(()=>api.guardarPlan(lote,R.reservar,R.nuevos),'No se guardó el plan')
+    toast('Plan guardado. Retales reservados.')
+    cortes=[];resultado=null;$('paquete-input').value='';$('carga-status').textContent=''
+    renderCortes()
+    $('results').innerHTML=`<div class="save-banner">✓ Plan del lote <b>#${r.lote_id}</b> guardado. Está en <b>Por cortar</b>.</div>`
+    await cargarRetales()
+    irA('pendientes')
+    await imprimirLote(r.lote_id)
+  }catch(e){
+    b.disabled=false;b.textContent='✓ Guardar plan, reservar retales e imprimir'
+    if(String(e.message||'').includes('RETAL_NO_DISPONIBLE'))$('results').insertAdjacentHTML('afterbegin','<div class="warn-banner">Otro plan tomó uno de los retales mientras optimizabas. Pulsa <b>Optimizar cortes</b> otra vez.</div>')
+  }
+}
+
+/* ===================== hoja de corte ===================== */
+function hojaHTML(plan,meta){
+  const A=plan.ajustes||aj,P=plan.piezas||[]
+  const nR=P.filter(p=>p.tipo==='RIEL').length,nS=P.filter(p=>p.tipo==='RETAL'&&!p.retal.deHoy).length
+  const nG=P.filter(p=>p.accion.tipo==='GUARDAR'&&!p.accion.usadoEn).length
+  const medida=v=>typeof v==='number'?fm(v):esc(v)
+  const fila=(c,ok)=>`<td class="dest">${esc(c.pedido)}</td><td class="dest">${esc(c.orden)}</td><td>${esc(c.color)}</td>
+    <td class="med">${c.ancho_mm>0?fm(c.ancho_mm):''}</td><td class="sep"></td><td>${esc(c.tubo)}</td><td class="med">${medida(c.ancho_tubo)}</td><td class="sep"></td><td class="ok">${ok}</td>`
+  let h=`<div class="paper"><div class="hd"><h3>HOJA DE CORTE</h3><div class="fecha">${meta.loteId?'Lote #'+meta.loteId+'<br>':''}Fecha: ${fechaDia(meta.fecha)}</div></div>
+    <div class="sub">${esc(meta.linea||'')}${meta.paquete?' &nbsp;·&nbsp; '+esc(meta.paquete):''} &nbsp;·&nbsp; Riel NORMAL ${fm(A.largo_normal*1000)} m &nbsp;·&nbsp; Otros ${fm(A.largo_otro*1000)} m &nbsp;·&nbsp; Retal = sobrante de ${fm(A.retal_min*1000)} m o más</div>
+    <div class="resumen"><span>RIELES NUEVOS: ${nR}</span><span>RETALES A SACAR DEL ESTANTE: ${nS}</span><span>RETALES A GUARDAR: ${nG}</span></div>
+    <table><thead><tr><th>PEDIDO</th><th>ORDEN</th><th>COLOR RIEL</th><th>ANCHO RIEL (m)</th><th class="sep"></th><th>TUBO</th><th>ANCHO TUBO (m)</th><th class="sep"></th><th>OK</th></tr></thead><tbody>`
+  let paqAnt=null
+  P.forEach(p=>{
+    if(p.paq!==paqAnt){h+=`<tr class="paq"><td colspan="9">PAQUETE&nbsp;&nbsp; ${esc(p.paq||meta.paquete||'')}</td></tr>`;paqAnt=p.paq}
+    const top=p.tipo==='RETAL'
+      ?(p.retal.deHoy?`TOMAR RETAL ${esc(codTxt(p.retal.codigo))} (${fm(p.largo)} m) &nbsp;(sale de una pieza anterior de esta hoja)`:`SACAR DEL ESTANTE: &nbsp;RETAL ${esc(codTxt(p.retal.codigo))} (${fm(p.largo)} m)`)
+      :`RIEL NUEVO &nbsp;·&nbsp; ${fm(p.largo)} m`
+    h+=`<tr class="pz ${p.tipo==='RETAL'?'retal':'riel'}"><td colspan="9">PIEZA ${p.n} &nbsp;&nbsp;► &nbsp;${top}</td></tr>`
+    p.cortes.forEach(c=>{h+=`<tr class="cut">${fila(c,'☐')}</tr>`})
+    const sob=`Sobrante ${fm(p.sobra)} m &nbsp;&nbsp;► &nbsp;`
+    if(p.accion.tipo==='GUARDAR')h+=`<tr class="ft guardar"><td colspan="9">${sob}GUARDAR RETAL ${esc(codTxt(p.accion.cod))} (${fm(p.accion.mm)} m) &nbsp;-&nbsp; ${p.accion.usadoEn?'NO va al estante: se usa en '+esc(p.accion.usadoEn):'marcar código y medida y llevar al estante &nbsp;&nbsp;[ &nbsp; ]'}</td></tr>`
+    else if(p.accion.tipo==='DESECHAR')h+=`<tr class="ft"><td colspan="9">${sob}desechar</td></tr>`
+    else h+=`<tr class="ft"><td colspan="9">Sin sobrante</td></tr>`
+    h+=`<tr class="gap"><td colspan="9"></td></tr>`
+  })
+  if((plan.revisar||[]).length){
+    h+=`<tr class="paq"><td colspan="9">CORTES PARA REVISAR (no entran en esta hoja)</td></tr>`
+    plan.revisar.forEach(r=>{h+=`<tr class="rev"><td colspan="9">REVISAR: ${esc(r.motivo)}</td></tr><tr class="cut">${fila(r.corte,'')}</tr>`})
+  }
+  return h+'</tbody></table></div>'
+}
+async function imprimirLote(id){
+  const L=(await seguro(()=>api.lotes(),'No se pudo leer el lote')).find(x=>x.id===id)
+  if(!L||!L.plan){toast('Ese lote no tiene hoja guardada',true);return}
+  $('print-area').innerHTML=hojaHTML(L.plan,{fecha:L.fecha,linea:L.linea,paquete:L.paquete,loteId:L.id})
+  setTimeout(()=>window.print(),100)
+}
+
+/* ===================== pantallas: por cortar ===================== */
+async function cargarPendientes(){
+  const el=$('lista-pendientes')
+  let L
+  try{L=await seguro(()=>api.lotes('PLANEADO'),'No se pudieron leer los planes')}catch(e){el.innerHTML='<div class="empty">Sin conexión.</div>';return}
+  const c=$('cnt-pend');c.hidden=!L.length;c.textContent=L.length
+  if(!L.length){el.innerHTML='<div class="empty">No hay planes pendientes. Optimiza un paquete y guarda el plan.</div>';return}
+  el.innerHTML=L.map(l=>`<div class="lote-row"><div class="lote-header" data-toggle="${l.id}">
+      <div class="lote-info"><b>Lote #${l.id}</b><span style="font-size:12px;color:var(--text2)">${fechaCorta(l.fecha)}</span>
+        <span class="badge gray">${esc(l.linea)}${l.paquete?' · '+esc(l.paquete):''}</span>
+        <span class="badge green">${l.rieles_nuevos} rieles nuevos</span><span class="badge blue">${l.retales_usados} retales a sacar</span>
+        <span class="aprov-pill ${claseAprov(l.aprovechamiento)}">${String(l.aprovechamiento).replace('.',',')} %</span></div>
+      <div class="lote-actions"><button class="btn-sm btn-blue" data-imprimir="${l.id}">Imprimir hoja</button>
+        <button class="btn-sm btn-green" data-confirmar="${l.id}">Ya se cortó</button><button class="btn-sm" data-anular="${l.id}">Anular</button></div></div>
+    <div class="lote-body" id="pend-${l.id}"></div></div>`).join('')
+}
+async function abrirPendiente(id){
+  const body=$('pend-'+id);if(!body)return
+  if(body.classList.toggle('open')){
+    body.innerHTML='<div class="loading"><div class="spinner"></div></div>'
+    const rs=await seguro(()=>api.retalesDeLote(id),'No se pudieron leer los retales')
+    const sacar=rs.filter(r=>r.lote_uso===id&&r.lote_origen!==id),nuevos=rs.filter(r=>r.lote_origen===id)
+    body.innerHTML=`<div class="two-col"><div><div class="card-title">Retales a sacar del estante</div>${sacar.length?`<table class="tb"><tbody>${sacar.map(r=>`<tr><td><b>${esc(r.codigo)}</b></td><td>${esc(r.color)}</td><td class="n">${fm(r.largo_mm)} m</td><td>${badgeEstado(r.estado)}</td>
+      <td>${r.estado==='RESERVADO'?`<button class="btn-sm" data-noestaba="${r.id}" data-lote="${id}">No estaba</button>`:r.estado==='NO ESTABA'?`<button class="btn-sm" data-siestaba="${r.id}" data-lote="${id}">Sí estaba</button>`:''}</td></tr>`).join('')}</tbody></table>`:'<div class="hint">Este plan no usa retales del estante.</div>'}</div>
+      <div><div class="card-title">Retales que se van a guardar</div>${nuevos.length?`<table class="tb"><tbody>${nuevos.map(r=>`<tr><td><b>${esc(r.codigo)}</b></td><td>${esc(r.color)}</td><td class="n">${fm(r.largo_mm)} m</td><td>${r.usado_en?'se usa en '+esc(r.usado_en):'al estante'}</td></tr>`).join('')}</tbody></table>`:'<div class="hint">Este plan no genera retales.</div>'}</div></div>`
+  }
+}
+
+/* ===================== pantallas: retales ===================== */
+function badgeEstado(e){const c={'DISPONIBLE':'green','RESERVADO':'amber','POR CORTAR':'amber','USADO':'gray','NO ESTABA':'red','DESCARTADO':'gray'}[e]||'gray';return`<span class="badge ${c}">${esc(e.charAt(0)+e.slice(1).toLowerCase())}</span>`}
+async function cargarRetales(){
+  try{retalesTodos=await seguro(()=>api.retales(),'No se pudo leer el estante')}catch(e){return}
+  const disp=retalesTodos.filter(r=>r.estado==='DISPONIBLE')
+  $('inv-counter').textContent=`${disp.length} retales · ${fm(disp.reduce((a,r)=>a+r.largo_mm,0))} m en el estante`
+  const colores=[...new Set(retalesTodos.map(r=>r.color))].sort()
+  const sel=$('f-color'),v=sel.value
+  sel.innerHTML='<option value="">Todos los colores</option>'+colores.map(c=>`<option${c===v?' selected':''}>${esc(c)}</option>`).join('')
+  const porColor={}
+  disp.forEach(r=>{const a=porColor[r.color]||(porColor[r.color]={n:0,mm:0,viejos:0});a.n++;a.mm+=r.largo_mm;if(diasDesde(r.fecha)>=aj.edad_dias)a.viejos++})
+  $('chips-colores').innerHTML=Object.keys(porColor).sort().map(c=>{const a=porColor[c];return`<div class="chip-color">${esc(c)}<b>${a.n} · ${fm(a.mm)} m</b>${a.viejos?`<span class="badge amber">${a.viejos} con ${aj.edad_dias}+ días</span>`:''}</div>`}).join('')||'<div class="hint">El estante está vacío.</div>'
+  renderRetales();renderCortes()
+}
+function renderRetales(){
+  const fe=$('f-estado').value,fc=$('f-color').value,fb=norm($('f-buscar').value)
+  const lista=retalesTodos.filter(r=>(!fe||r.estado===fe)&&(!fc||r.color===fc)&&(!fb||norm(r.codigo).includes(fb)))
+  if(!lista.length){$('tabla-retales').innerHTML='<div class="empty">No hay retales con ese filtro.</div>';return}
+  const opciones=r=>{
+    if(r.estado==='DISPONIBLE')return`<button class="btn-sm" data-est="NO ESTABA" data-id="${r.id}">No está</button> <button class="btn-sm" data-est="DESCARTADO" data-id="${r.id}">Descartar</button>`
+    if(r.estado==='NO ESTABA'||r.estado==='DESCARTADO')return`<button class="btn-sm" data-est="DISPONIBLE" data-id="${r.id}">Volver al estante</button>`
+    if(r.estado==='RESERVADO')return`<button class="btn-sm" data-est="NO ESTABA" data-id="${r.id}">No estaba</button>`
+    return''
+  }
+  $('tabla-retales').innerHTML=`<table class="tb"><thead><tr><th>Código</th><th>Color</th><th>Largo</th><th>Fecha</th><th>Días</th><th>Estado</th><th>Origen</th><th>Usado en</th><th></th></tr></thead><tbody>
+    ${lista.slice(0,800).map(r=>{const d=diasDesde(r.fecha);return`<tr><td><b>${esc(r.codigo)}</b></td><td>${esc(r.color)}</td><td class="n"><b>${fm(r.largo_mm)} m</b></td><td>${fechaDia(r.fecha+'T12:00:00')}</td>
+      <td class="n">${d}${r.estado==='DISPONIBLE'&&d>=aj.edad_dias?' <span class="badge amber">viejo</span>':''}</td><td>${badgeEstado(r.estado)}</td><td>${esc(r.origen)}</td><td>${esc(r.usado_en)}</td><td>${opciones(r)}</td></tr>`}).join('')}</tbody></table>`
+}
+
+/* ===================== pantallas: histórico ===================== */
+const claseAprov=a=>a>=95?'aprov-high':a>=90?'aprov-mid':'aprov-low'
+async function cargarHistorico(){
+  try{lotesHist=(await seguro(()=>api.lotes('CORTADO'),'No se pudo leer el histórico')).slice().reverse()}catch(e){return}
+  renderHistorico()
+}
+function clavePeriodo(f){
+  const d=new Date(f)
+  if(periodo==='dia')return d.toLocaleDateString('es-CO',{day:'2-digit',month:'2-digit',year:'numeric'})
+  if(periodo==='semana'){const s=new Date(d);s.setDate(d.getDate()-((d.getDay()+6)%7));return'Sem '+s.toLocaleDateString('es-CO',{day:'2-digit',month:'2-digit'})}
+  return d.toLocaleDateString('es-CO',{month:'short',year:'numeric'})
+}
+function agrupar(lotes){
+  const g=new Map()
+  lotes.forEach(l=>{const k=clavePeriodo(l.fecha_corte||l.fecha)
+    if(!g.has(k))g.set(k,{label:k,rieles:0,entrada:0,desp:0})
+    const a=g.get(k);a.rieles+=l.rieles_nuevos||0;a.entrada+=(+l.metros_riel||0)+(+l.metros_retal||0);a.desp+=(+l.metros_desperdicio||0)})
+  return[...g.values()].map(a=>({...a,aprov:a.entrada>0?(a.entrada-a.desp)/a.entrada*100:null}))
+}
+function renderHistorico(){
+  const L=filtroLinea==='todos'?lotesHist:lotesHist.filter(l=>l.linea===filtroLinea)
+  const entrada=L.reduce((a,l)=>a+(+l.metros_riel||0)+(+l.metros_retal||0),0),desp=L.reduce((a,l)=>a+(+l.metros_desperdicio||0),0)
+  $('hist-metrics').innerHTML=`
+    <div class="metric"><div class="ml">Lotes cortados</div><div class="mv">${L.length}</div></div>
+    <div class="metric"><div class="ml">Aprovechamiento</div><div class="mv">${entrada?pct((entrada-desp)/entrada):'—'}</div><div class="ms">ponderado por metros</div></div>
+    <div class="metric"><div class="ml">Rieles nuevos</div><div class="mv">${L.reduce((a,l)=>a+(l.rieles_nuevos||0),0)}</div></div>
+    <div class="metric"><div class="ml">Retales usados</div><div class="mv">${L.reduce((a,l)=>a+(l.retales_usados||0),0)}</div></div>
+    <div class="metric"><div class="ml">Desperdicio</div><div class="mv">${desp.toFixed(2).replace('.',',')} m</div></div>`
+  const dark=window.matchMedia('(prefers-color-scheme:dark)').matches,gc=dark?'rgba(255,255,255,0.08)':'rgba(0,0,0,0.06)',tc=dark?'#a0a09a':'#6b6b67'
+  const base={responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{grid:{color:gc},ticks:{color:tc,font:{size:11},maxRotation:45}},y:{grid:{color:gc},ticks:{color:tc,font:{size:11}},beginAtZero:true}}}
+  Object.values(charts).forEach(c=>c&&c.destroy())
+  const gS=agrupar(lotesHist.filter(l=>l.linea==='SHEER')),gE=agrupar(lotesHist.filter(l=>l.linea==='ENROLLABLE')),gT=agrupar(L)
+  const labs=[...new Set([...lotesHist.map(l=>clavePeriodo(l.fecha_corte||l.fecha))])]
+  if(typeof Chart!=='undefined'){
+    charts.aprov=new Chart($('chart-aprov'),{type:'line',data:{labels:labs,datasets:[
+      {label:'SHEER',data:labs.map(k=>gS.find(g=>g.label===k)?.aprov??null),borderColor:'#E65100',tension:.3,pointRadius:3,spanGaps:true},
+      {label:'ENROLLABLE',data:labs.map(k=>gE.find(g=>g.label===k)?.aprov??null),borderColor:'#1B5E20',tension:.3,pointRadius:3,spanGaps:true}]},
+      options:{...base,plugins:{legend:{display:true,labels:{color:tc}}},scales:{...base.scales,y:{...base.scales.y,beginAtZero:false,suggestedMin:80,max:100,ticks:{...base.scales.y.ticks,callback:v=>v+'%'}}}}})
+    charts.rieles=new Chart($('chart-rieles'),{type:'bar',data:{labels:gT.map(g=>g.label),datasets:[{data:gT.map(g=>g.rieles),backgroundColor:'rgba(55,138,221,0.7)',borderRadius:4}]},options:base})
+    charts.desp=new Chart($('chart-desp'),{type:'bar',data:{labels:gT.map(g=>g.label),datasets:[{data:gT.map(g=>Math.round(g.desp*100)/100),backgroundColor:'rgba(226,75,74,0.7)',borderRadius:4}]},options:{...base,scales:{...base.scales,y:{...base.scales.y,ticks:{...base.scales.y.ticks,callback:v=>v+' m'}}}}})
+  }
+  // por color
+  const pc={}
+  L.forEach(l=>Object.entries(l.por_color||{}).forEach(([c,a])=>{const t=pc[c]||(pc[c]={rieles:0,retales:0,m_riel:0,m_retal:0,desp:0,nuevos:0});t.rieles+=a.rieles||0;t.retales+=a.retales||0;t.m_riel+=a.m_riel||0;t.m_retal+=a.m_retal||0;t.desp+=a.desp||0;t.nuevos+=a.nuevos||0}))
+  const filasC=Object.keys(pc).sort().map(c=>{const a=pc[c],e=a.m_riel+a.m_retal;return`<tr><td><b>${esc(c)}</b></td><td class="n">${a.rieles}</td><td class="n">${a.retales}</td><td class="n">${a.nuevos}</td><td class="n">${fm(a.desp)}</td><td class="n"><span class="aprov-pill ${claseAprov(e?(e-a.desp)/e*100:0)}">${e?pct((e-a.desp)/e):'—'}</span></td></tr>`}).join('')
+  $('hist-colores').innerHTML=filasC?`<table class="tb"><thead><tr><th>Color riel</th><th>Rieles nuevos</th><th>Retales usados</th><th>Retales generados</th><th>Desperdicio (m)</th><th>Aprovechamiento</th></tr></thead><tbody>${filasC}</tbody></table>`:'<div class="empty">Sin lotes cortados.</div>'
+  // lotes
+  $('hist-lotes').innerHTML=L.length?L.slice().reverse().map(l=>`<div class="lote-row"><div class="lote-header" data-hist="${l.id}">
+      <div class="lote-info"><b>#${l.id}</b><span style="font-size:12px;color:var(--text2)">${fechaCorta(l.fecha_corte||l.fecha)}</span>
+        <span class="badge gray">${esc(l.linea)}${l.paquete?' · '+esc(l.paquete):''}</span>
+        <span class="aprov-pill ${claseAprov(l.aprovechamiento)}">${String(l.aprovechamiento).replace('.',',')} %</span>
+        <span class="badge green">${l.rieles_nuevos} rieles</span><span class="badge blue">${l.retales_usados} retales usados</span>
+        <span style="font-size:12px;color:var(--text2)">${(+l.metros_desperdicio).toFixed(3).replace('.',',')} m desperdicio</span></div>
+      <div class="lote-actions"><button class="btn-sm" data-imprimir="${l.id}">Reimprimir hoja</button><span style="color:var(--text3)">›</span></div></div>
+    <div class="lote-body" id="hist-${l.id}">${detalleLote(l)}</div></div>`).join(''):'<div class="empty">Sin lotes cortados todavía.</div>'
+}
+function detalleLote(l){
+  const pc=l.por_color||{}
+  const tabla=Object.keys(pc).length?`<table class="tb"><thead><tr><th>Color</th><th>Rieles nuevos</th><th>Retales usados</th><th>Metros cortados</th><th>Retales nuevos</th><th>Desperdicio</th><th>Aprov.</th></tr></thead><tbody>${Object.keys(pc).sort().map(c=>{const a=pc[c];return`<tr><td><b>${esc(c)}</b></td><td class="n">${a.rieles}</td><td class="n">${a.retales}</td><td class="n">${fm(a.cortado)}</td><td class="n">${a.nuevos}</td><td class="n">${fm(a.desp)}</td><td class="n">${pct(a.aprov||0)}</td></tr>`}).join('')}</tbody></table>`:''
+  const piezas=(l.plan&&l.plan.piezas)||[]
+  return tabla+(piezas.length?`<div style="margin-top:12px">${piezas.map(tarjetaPieza).join('')}</div>`:'')
+}
+
+/* ===================== ajustes ===================== */
+function pintarAjustes(){
+  $('a-normal').value=String(aj.largo_normal).replace('.',',');$('a-otro').value=String(aj.largo_otro).replace('.',',')
+  $('a-retal').value=String(aj.retal_min).replace('.',',');$('a-tol').value=String(aj.tolerancia).replace('.',',')
+  $('a-edad').value=aj.edad_dias;$('a-sierra').value=String(aj.sierra).replace('.',',')
+  $('info-largos').textContent=`Riel NORMAL ${fm(aj.largo_normal*1000)} m · otros tipos ${fm(aj.largo_otro*1000)} m · retal desde ${fm(aj.retal_min*1000)} m · desecho máximo al usar retal ${fm(aj.tolerancia*1000)} m · sierra ${fm(aj.sierra*1000)} m`
+}
+async function guardarAjustes(){
+  const a={largo_normal:num($('a-normal').value),largo_otro:num($('a-otro').value),retal_min:num($('a-retal').value),
+    tolerancia:num($('a-tol').value),edad_dias:parseInt($('a-edad').value,10),sierra:num($('a-sierra').value)}
+  if(Object.values(a).some(v=>isNaN(v)||v<0)||a.largo_normal<=0||a.largo_otro<=0){toast('Revisa los valores: deben ser números positivos',true);return}
+  await seguro(()=>api.guardarAjustes(a),'No se guardaron los ajustes');aj={...aj,...a};pintarAjustes();toast('Ajustes guardados para todos')
+}
+
+/* ===================== navegación y eventos ===================== */
+function irA(p){
+  document.querySelectorAll('.page').forEach(e=>e.classList.toggle('active',e.id==='page-'+p))
+  document.querySelectorAll('.nav-tab').forEach(e=>e.classList.toggle('active',e.dataset.page===p))
+  if(p==='pendientes')cargarPendientes()
+  if(p==='retales')cargarRetales()
+  if(p==='historico')cargarHistorico()
+}
+document.querySelectorAll('.nav-tab').forEach(b=>b.onclick=()=>irA(b.dataset.page))
+$('drop').onclick=()=>$('file').click()
+$('file').onclick=e=>e.stopPropagation()
+$('file').onchange=e=>{const f=e.target.files[0];if(f)leerArchivo(f);e.target.value=''}
+$('drop').ondragover=e=>{e.preventDefault();$('drop').classList.add('dragover')}
+$('drop').ondragleave=()=>$('drop').classList.remove('dragover')
+$('drop').ondrop=e=>{e.preventDefault();$('drop').classList.remove('dragover');const f=e.dataTransfer.files[0];if(f)leerArchivo(f)}
+$('btn-pegar').onclick=()=>{
+  const st=$('carga-status'),txt=$('pegar').value.replace(/\r/g,'').trim()
+  if(!txt){st.className='err';st.textContent='El cuadro está vacío.';return}
+  try{const filas=txt.split('\n').map(l=>l.split('\t'));const{lista,sinTipo}=filasACortes(filas)
+    if(!lista.length)throw new Error('No encontré cortes debajo de los encabezados.')
+    st.className='ok-txt';$('pegar').value='';agregarCortes(lista,sinTipo,'lo pegado')}
+  catch(e){st.className='err';st.textContent=e.message}
+}
+$('btn-agregar').onclick=()=>{
+  const mm=aMM($('m-ancho').value),color=$('m-color').value.trim().toUpperCase()
+  if(!color||!(mm>0)){$('m-error').textContent='Escribe el color y el ancho del riel en metros.';return}
+  $('m-error').textContent=''
+  const at=$('m-anchotubo').value.trim()
+  agregarCortes([{pedido:$('m-pedido').value.trim().toUpperCase(),orden:$('m-orden').value.trim().toUpperCase(),paquete:'',color,ancho_mm:mm,
+    tipo:$('m-tipo').value,tubo:$('m-tubo').value.trim(),ancho_tubo:at?(isNaN(num(at))?at:aMM(at)):''}],0,'el formulario')
+  ;['m-pedido','m-orden','m-ancho','m-anchotubo'].forEach(id=>$(id).value='');$('m-ancho').focus()
+}
+$('btn-limpiar').onclick=()=>{cortes=[];resultado=null;$('results').innerHTML='';$('carga-status').textContent='';renderCortes()}
+$('tabla-cortes').onclick=e=>{const b=e.target.closest('[data-quitar]');if(!b)return;cortes.splice(+b.dataset.quitar,1);resultado=null;$('results').innerHTML='';renderCortes()}
+$('btn-optimizar').onclick=optimizar
+$('paquete-input').oninput=e=>{e.target.value=e.target.value.toUpperCase()}
+
+$('lista-pendientes').onclick=async e=>{
+  const t=e.target
+  if(t.dataset.imprimir){e.stopPropagation();await imprimirLote(+t.dataset.imprimir);return}
+  if(t.dataset.confirmar){e.stopPropagation();const id=+t.dataset.confirmar
+    confirmar('Ya se cortó','Los retales reservados del lote #'+id+' pasan a usados y los retales nuevos entran al estante. Si alguno no estaba, márcalo antes.','Confirmar corte',async()=>{
+      const r=await seguro(()=>api.confirmarLote(id),'No se confirmó');toast(`Lote #${id} cortado: ${r.usados} retales usados, ${r.nuevos} nuevos al estante`);cargarPendientes();cargarRetales()},'btn-green');return}
+  if(t.dataset.anular){e.stopPropagation();const id=+t.dataset.anular
+    confirmar('Anular plan','Se liberan los retales reservados del lote #'+id+' y se borran los retales que iban a salir. Úsalo si el plan no se va a cortar.','Anular plan',async()=>{
+      await seguro(()=>api.anularLote(id),'No se anuló');toast('Plan #'+id+' anulado');cargarPendientes();cargarRetales()});return}
+  if(t.dataset.noestaba||t.dataset.siestaba){e.stopPropagation()
+    await seguro(()=>api.estadoRetal(+(t.dataset.noestaba||t.dataset.siestaba),t.dataset.noestaba?'NO ESTABA':'RESERVADO'),'No se cambió el estado')
+    const body=$('pend-'+t.dataset.lote);body.classList.remove('open');abrirPendiente(+t.dataset.lote);return}
+  const h=t.closest('[data-toggle]');if(h)abrirPendiente(+h.dataset.toggle)
+}
+$('tabla-retales').onclick=async e=>{
+  const b=e.target.closest('[data-est]');if(!b)return
+  await seguro(()=>api.estadoRetal(+b.dataset.id,b.dataset.est),'No se cambió el estado');cargarRetales()
+}
+;['f-estado','f-color'].forEach(id=>$(id).onchange=renderRetales);$('f-buscar').oninput=renderRetales
+$('btn-nuevo-retal').onclick=async()=>{
+  const color=$('n-color').value.trim().toUpperCase(),mm=aMM($('n-largo').value),d=Math.max(0,parseInt($('n-dias').value||'0',10)||0)
+  if(!color||!(mm>0)){$('n-error').textContent='Escribe el color y el largo en metros.';return}
+  $('n-error').textContent=''
+  const cod=await seguro(()=>api.crearRetal(color,mm,d),'No se agregó el retal')
+  toast('Retal '+cod+' agregado al estante');$('n-largo').value='';cargarRetales()
+}
+$('periodos').onclick=e=>{const b=e.target.closest('[data-p]');if(!b)return;periodo=b.dataset.p;document.querySelectorAll('.period-tab').forEach(x=>x.classList.toggle('active',x===b));renderHistorico()}
+$('filtros-linea').onclick=e=>{const b=e.target.closest('[data-l]');if(!b)return;filtroLinea=b.dataset.l;document.querySelectorAll('.filter-btn').forEach(x=>x.classList.toggle('active',x===b));renderHistorico()}
+$('hist-lotes').onclick=async e=>{
+  if(e.target.dataset.imprimir){e.stopPropagation();await imprimirLote(+e.target.dataset.imprimir);return}
+  const h=e.target.closest('[data-hist]');if(h)$('hist-'+h.dataset.hist).classList.toggle('open')
+}
+$('btn-guardar-ajustes').onclick=guardarAjustes
+
+/* ===================== conexión e inicio de sesión ===================== */
+function mostrar(estado){
+  $('setup-banner').hidden=estado!=='config';$('login-banner').hidden=estado!=='login'
+  $('nav').style.display=estado==='app'?'':'none';$('user-box').hidden=estado!=='app'
+  if(estado!=='app')document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'))
+}
+async function entrarApp(email){
+  $('user-mail').textContent=email||''
+  mostrar('app')
+  try{aj={...DEF,...(await seguro(()=>api.ajustes(),'No se leyeron los ajustes'))}}catch(e){}
+  pintarAjustes();irA('optimizador');renderCortes();cargarRetales();cargarPendientes()
+}
+async function conectar(url,key){
+  sb=supabase.createClient(url,key);api=crearApi(sb)
+  const{data}=await sb.auth.getSession()
+  if(data.session)await entrarApp(data.session.user.email);else mostrar('login')
+}
+$('btn-conectar').onclick=async()=>{
+  const url=$('cfg-url').value.trim(),key=$('cfg-key').value.trim()
+  if(!url||!key){$('conn-error').textContent='Completa los dos campos.';return}
+  try{localStorage.setItem(CFG_KEY,JSON.stringify({url,key}))}catch(e){}
+  try{await conectar(url,key)}catch(e){$('conn-error').textContent='No se pudo conectar: '+(e.message||'revisa la URL y la clave.')}
+}
+$('btn-login').onclick=async()=>{
+  $('login-error').textContent=''
+  const{data,error}=await sb.auth.signInWithPassword({email:$('login-mail').value.trim(),password:$('login-pass').value})
+  if(error){$('login-error').textContent='No se pudo entrar: revisa el correo y la contraseña.';return}
+  $('login-pass').value='';await entrarApp(data.user.email)
+}
+$('login-pass').onkeydown=e=>{if(e.key==='Enter')$('btn-login').click()}
+$('btn-salir').onclick=async()=>{await sb.auth.signOut();mostrar('login')}
+$('btn-cambiar-proyecto').onclick=e=>{e.preventDefault();try{localStorage.removeItem(CFG_KEY)}catch(x){}mostrar('config')}
+
+async function init(){
+  if(window.API_PRUEBA){api=window.API_PRUEBA;await entrarApp('prueba@local');return}
+  let cfg=null
+  try{cfg=JSON.parse(localStorage.getItem(CFG_KEY)||'null')}catch(e){}
+  if(cfg&&cfg.url&&cfg.key){$('cfg-url').value=cfg.url;$('cfg-key').value=cfg.key
+    try{await conectar(cfg.url,cfg.key);return}catch(e){$('conn-error').textContent='No se pudo conectar con la configuración guardada.'}}
+  mostrar('config')
+}
+window.__rieles={planificar,metricas,filasACortes}
+init()
+})()
+</script>
+</body>
+</html>
