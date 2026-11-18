@@ -358,6 +358,7 @@
 'use strict'
 const CFG_KEY='rieles_supabase_config'
 const DEF={largo_normal:5.77,largo_otro:6,retal_min:0.8,tolerancia:0.2,edad_dias:15,sierra:0}
+const DESPUNTE_NORMAL_MM=30   // 3 cm que se quitan a cada riel NORMAL nuevo (5,80 -> 5,77): cuentan como desperdicio
 
 let sb=null, api=null, aj={...DEF}
 let cortes=[], resultado=null
@@ -495,7 +496,7 @@ function planificar(cortes,disponibles,aj){
       const sum=sel.reduce((a,j)=>a+pend[j].ancho_mm,0),rem=g.cap-sum-K*(sel.length-1)
       nPieza++
       const accion=accionPara(rem,g.color,'Riel nuevo - '+(g.paq||g.color)+' - pieza '+nPieza)
-      piezas.push({n:nPieza,paq:g.paq,color:g.color,tipo:'RIEL',largo:g.cap,cortes:sel.map(j=>cutInfo(pend[j])),uso:sum,sobra:rem,accion,motivo})
+      piezas.push({n:nPieza,paq:g.paq,color:g.color,tipo:'RIEL',largo:g.cap,despunte:g.cap===capN?DESPUNTE_NORMAL_MM:0,cortes:sel.map(j=>cutInfo(pend[j])),uso:sum,sobra:rem,accion,motivo})
       const s=new Set(sel);pend=pend.filter((_,j)=>!s.has(j))
     }
   })
@@ -517,7 +518,7 @@ function metricas(piezas){
   piezas.forEach(p=>{
     const a=porColor[p.color]||(porColor[p.color]={rieles:0,m_riel:0,retales:0,m_retal:0,cortado:0,nuevos:0,m_nuevos:0,desp:0})
     for(const t of [a,tot]){
-      if(p.tipo==='RIEL'){t.rieles++;t.m_riel+=p.largo}
+      if(p.tipo==='RIEL'){t.rieles++;t.m_riel+=p.largo+(p.despunte||0);t.desp+=(p.despunte||0)}
       else if(!p.retal.deHoy){t.retales++;t.m_retal+=p.largo}
       t.cortado+=p.uso
       if(p.accion.tipo==='GUARDAR'){
