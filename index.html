@@ -125,31 +125,31 @@
   label.f{display:grid;grid-template-columns:1fr 140px;align-items:center;gap:10px;margin:8px 0;font-size:13px;}
   .preview-wrap{background:var(--bg3);border-radius:var(--r);padding:14px;overflow:auto;margin-top:10px;}
 
-  /* ===== HOJA DE CORTE (blanco y negro, igual a la macro) ===== */
-  .paper{background:#fff;color:#000;font-family:Arial,Helvetica,sans-serif;padding:20px 22px 28px;min-width:820px;}
+  /* ===== HOJA DE CORTE (blanco y negro, compacta: 15 a 20 cortes por hoja) ===== */
+  .paper{background:#fff;color:#000;font-family:Arial,Helvetica,sans-serif;padding:14px 16px 18px;min-width:900px;}
   .paper .hd{display:flex;justify-content:space-between;align-items:flex-end;}
-  .paper h3{margin:0;font-size:30px;font-weight:700;}
-  .paper .fecha{font-weight:700;font-size:16px;text-align:right;}
-  .paper .sub{font-size:12px;color:#555;margin:2px 0 14px;}
-  .paper .resumen{border:2px solid #000;background:#F2F2F2;text-align:center;font-weight:700;font-size:18px;padding:9px;margin-bottom:18px;}
-  .paper .resumen span{margin:0 22px;white-space:nowrap;display:inline-block;}
+  .paper h3{margin:0;font-size:20px;font-weight:700;}
+  .paper .fecha{font-weight:700;font-size:12px;text-align:right;line-height:1.3;}
+  .paper .sub{font-size:10px;color:#555;margin:1px 0 6px;}
+  .paper .resumen{border:1.5px solid #000;background:#F2F2F2;text-align:center;font-weight:700;font-size:12px;padding:4px;margin-bottom:8px;}
+  .paper .resumen span{margin:0 18px;white-space:nowrap;display:inline-block;}
   .paper table{border-collapse:collapse;width:100%;}
-  .paper th{background:#D9D9D9;font-size:12.5px;padding:8px 6px;border-top:2px solid #000;border-bottom:2px solid #000;text-align:center;}
-  .paper th.sep,.paper td.sep{background:#fff;border:0;width:14px;padding:0;}
-  .paper td{text-align:center;padding:0 6px;}
-  .paper tr.paq td{background:#404040;color:#fff;font-weight:700;font-size:20px;text-align:left;padding:8px 12px;height:40px;}
-  .paper tr.pz td{font-weight:700;font-size:17px;text-align:left;padding:7px 12px;height:38px;border-top:3px solid #000;}
+  .paper th{background:#D9D9D9;font-size:9.5px;padding:4px 3px;border-top:1.5px solid #000;border-bottom:1.5px solid #000;text-align:center;line-height:1.15;}
+  .paper th.sep,.paper td.sep{background:#fff;border:0;width:8px;padding:0;}
+  .paper td{text-align:center;padding:0 4px;}
+  .paper tr.paq td{background:#404040;color:#fff;font-weight:700;font-size:13px;text-align:left;padding:3px 8px;height:22px;}
+  .paper tr.pz td{font-weight:700;font-size:11.5px;text-align:left;padding:1px 8px;height:18px;border-top:2px solid #000;}
   .paper tr.pz.retal td{background:#D9D9D9;}
   .paper tr.pz.riel td{background:#F2F2F2;}
-  .paper tr.cut td{height:52px;font-size:15px;border-bottom:1px solid #999;}
+  .paper tr.cut td{height:20px;font-size:10.5px;border-bottom:1px solid #aaa;}
   .paper tr.cut td.sep{border-bottom:0;}
-  .paper tr.cut td.dest{font-size:19px;font-weight:700;}
-  .paper tr.cut td.med{font-size:28px;font-weight:700;}
-  .paper tr.cut td.ok{font-size:24px;}
-  .paper tr.ft td{text-align:left;padding:7px 12px;height:36px;border-bottom:3px solid #000;font-size:15px;font-style:italic;color:#404040;border-top:1px solid #999;}
-  .paper tr.ft.guardar td{font-style:normal;color:#000;font-weight:700;font-size:16px;border-top:3px double #000;}
-  .paper tr.gap td{height:32px;border:0;}
-  .paper tr.rev td{text-align:left;font-weight:700;padding:6px 12px;height:30px;}
+  .paper tr.cut td.dest{font-size:12px;font-weight:700;}
+  .paper tr.cut td.med{font-size:14px;font-weight:700;}
+  .paper tr.cut td.ok{font-size:13px;}
+  .paper tr.ft td{text-align:left;padding:1px 8px;height:18px;border-bottom:2px solid #000;font-size:10.5px;font-style:italic;color:#404040;}
+  .paper tr.ft.guardar td{font-style:normal;color:#000;font-weight:700;font-size:11px;border-top:2.5px double #000;}
+  .paper tr.gap td{height:4px;border:0;}
+  .paper tr.rev td{text-align:left;font-weight:700;padding:2px 8px;height:18px;font-size:10.5px;}
   #print-area{display:none;}
   @media print{
     @page{size:letter landscape;margin:8mm;}
@@ -231,10 +231,10 @@
       <div class="upload-zone" id="drop">
         <input type="file" id="file" accept=".xlsx,.xls,.xlsm,.csv"/>
         <div class="upload-icon">📂</div>
-        <div class="upload-label"><strong>Subir Excel</strong> o arrastrar aquí<br><span style="font-size:11px;color:var(--text3)">Columnas: PEDIDO · ORDEN · COLOR RIEL · ANCHO RIEL · TIPO (o columna T) · TUBO · ANCHO TUBO · PAQUETE (opcional)</span></div>
+        <div class="upload-label"><strong>Subir Excel</strong> o arrastrar aquí<br><span style="font-size:11px;color:var(--text3)">Columnas: PEDIDO · ORDEN · PERFIL · COLOR RIEL · ANCHO RIEL · TIPO (o columna T) · TUBO · ANCHO TUBO · ENROLLE · AGRUPACIÓN · PAQUETE (opcional)</span></div>
       </div>
       <div class="hint">O copia las columnas en Excel (con la fila de encabezados) y pégalas aquí:</div>
-      <textarea id="pegar" placeholder="PEDIDO	ORDEN	COLOR RIEL	ANCHO RIEL	TIPO	TUBO	ANCHO TUBO"></textarea>
+      <textarea id="pegar" placeholder="PEDIDO	ORDEN	PERFIL	COLOR RIEL	ANCHO RIEL	TIPO	TUBO	ANCHO TUBO	ENROLLE	AGRUPACION"></textarea>
       <div class="row" style="margin-top:8px"><button class="btn-green" id="btn-pegar">Agregar lo pegado</button></div>
       <div id="carga-status" class="ok-txt"></div>
     </div>
@@ -248,6 +248,11 @@
         <input type="text" id="m-color" placeholder="Color riel" list="lista-colores" style="text-transform:uppercase"/>
         <input type="text" id="m-ancho" placeholder="Ancho riel (m)" inputmode="decimal"/>
         <select id="m-tipo"><option>NORMAL</option><option>CONTRARIAS</option></select>
+      </div>
+      <div class="row">
+        <input type="text" id="m-perfil" placeholder="Perfil"/>
+        <input type="text" id="m-enrolle" placeholder="Enrolle"/>
+        <input type="text" id="m-agrupacion" placeholder="Agrupación"/>
       </div>
       <div class="row">
         <input type="text" id="m-tubo" placeholder="Tubo"/>
@@ -448,7 +453,8 @@ function planificar(cortes,disponibles,aj){
       return{tipo:'GUARDAR',cod:tmp,mm:rem}}
     return rem>0?{tipo:'DESECHAR'}:{tipo:'NADA'}
   }
-  const cutInfo=c=>({pedido:c.pedido,orden:c.orden,color:norm(c.color),ancho_mm:c.ancho_mm,tubo:c.tubo,ancho_tubo:c.ancho_tubo})
+  const cutInfo=c=>({pedido:c.pedido,orden:c.orden,perfil:c.perfil||'',color:norm(c.color),ancho_mm:c.ancho_mm,tubo:c.tubo,ancho_tubo:c.ancho_tubo,
+    enrolle:c.enrolle||'',agrupacion:c.agrupacion||''})
   const piezas=[]
   ;[...grupos.keys()].sort((a,b)=>a.localeCompare(b,'es')).forEach(k=>{
     const g=grupos.get(k);let pend=g.items.slice()
@@ -530,8 +536,10 @@ function mapearColumnas(h){
   const c={
     pedido:idx(x=>x.includes('PEDIDO')),orden:idx(x=>x==='ORDEN'),paquete:idx(x=>x.includes('PAQUETE')),
     color:idx(x=>x==='COLOR RIEL'),ancho:idx(x=>x==='ANCHO RIEL'),tipo:idx(x=>x==='TIPO'||x.startsWith('TIPO')),
-    tubo:idx(x=>x==='TUBO'),anchoTubo:idx(x=>x==='ANCHO TUBO')
+    tubo:idx(x=>x==='TUBO'),anchoTubo:idx(x=>x==='ANCHO TUBO'),
+    perfil:idx(x=>x==='PERFIL'),enrolle:idx(x=>x.includes('ENROLLE')),agrupacion:idx(x=>x.includes('AGRUPACION'))
   }
+  if(c.perfil<0)c.perfil=idx(x=>x.startsWith('PERFIL')&&!x.includes('CORTE'))
   if(c.orden<0)c.orden=idx(x=>x.includes('ORDEN'))
   if(c.color<0)c.color=idx(x=>x.includes('COLOR'))
   if(c.ancho<0)c.ancho=idx(x=>x.includes('ANCHO')&&!x.includes('TUBO'))
@@ -557,6 +565,7 @@ function filasACortes(filas){
     if(!tipo){tipo='NORMAL';sinTipo++}
     const at=c.anchoTubo>=0?f[c.anchoTubo]:''
     out.push({pedido:g('pedido'),orden:g('orden'),paquete:g('paquete'),color:color.toUpperCase(),
+      perfil:g('perfil'),enrolle:g('enrolle'),agrupacion:g('agrupacion'),
       ancho_mm:aMM(ancho),tipo:tipo.toUpperCase(),tubo:g('tubo'),ancho_tubo:(at===''||at==null)?'':(isNaN(num(at))?String(at):aMM(at))})
   }
   return{lista:out,sinTipo}
@@ -593,8 +602,8 @@ function leerArchivo(file){
 function renderCortes(){
   const n=cortes.length
   $('resumen-cortes').textContent=n?`· ${n} cortes · ${fm(cortes.reduce((a,c)=>a+(c.ancho_mm||0),0))} m`:''
-  $('tabla-cortes').innerHTML=n?`<table class="tb"><thead><tr><th>Paquete</th><th>Pedido</th><th>Orden</th><th>Color riel</th><th>Ancho riel</th><th>Tipo</th><th>Tubo</th><th>Ancho tubo</th><th></th></tr></thead><tbody>
-    ${cortes.map((c,i)=>`<tr><td>${esc(c.paquete)}</td><td>${esc(c.pedido)}</td><td>${esc(c.orden)}</td><td>${esc(c.color)}</td><td class="n"><b>${c.ancho_mm>0?fm(c.ancho_mm):'—'}</b></td><td>${esc(c.tipo)}</td><td>${esc(c.tubo)}</td><td class="n">${typeof c.ancho_tubo==='number'?fm(c.ancho_tubo):esc(c.ancho_tubo)}</td><td><button class="btn-sm" data-quitar="${i}">×</button></td></tr>`).join('')}</tbody></table>`
+  $('tabla-cortes').innerHTML=n?`<table class="tb"><thead><tr><th>Paquete</th><th>Pedido</th><th>Orden</th><th>Perfil</th><th>Color riel</th><th>Ancho riel</th><th>Tipo</th><th>Tubo</th><th>Ancho tubo</th><th>Enrolle</th><th>Agrupación</th><th></th></tr></thead><tbody>
+    ${cortes.map((c,i)=>`<tr><td>${esc(c.paquete)}</td><td>${esc(c.pedido)}</td><td>${esc(c.orden)}</td><td>${esc(c.perfil)}</td><td>${esc(c.color)}</td><td class="n"><b>${c.ancho_mm>0?fm(c.ancho_mm):'—'}</b></td><td>${esc(c.tipo)}</td><td>${esc(c.tubo)}</td><td class="n">${typeof c.ancho_tubo==='number'?fm(c.ancho_tubo):esc(c.ancho_tubo)}</td><td>${esc(c.enrolle)}</td><td>${esc(c.agrupacion)}</td><td><button class="btn-sm" data-quitar="${i}">×</button></td></tr>`).join('')}</tbody></table>`
     :'<div class="empty">Todavía no hay cortes. Sube un Excel, pega desde Excel o agrégalos a mano.</div>'
   const cols=[...new Set(cortes.map(c=>norm(c.color)).concat(retalesTodos.map(r=>norm(r.color))))].filter(Boolean).sort()
   $('lista-colores').innerHTML=cols.map(c=>`<option value="${esc(c)}">`).join('')
@@ -694,29 +703,30 @@ function hojaHTML(plan,meta){
   const nR=P.filter(p=>p.tipo==='RIEL').length,nS=P.filter(p=>p.tipo==='RETAL'&&!p.retal.deHoy).length
   const nG=P.filter(p=>p.accion.tipo==='GUARDAR'&&!p.accion.usadoEn).length
   const medida=v=>typeof v==='number'?fm(v):esc(v)
-  const fila=(c,ok)=>`<td class="dest">${esc(c.pedido)}</td><td class="dest">${esc(c.orden)}</td><td>${esc(c.color)}</td>
-    <td class="med">${c.ancho_mm>0?fm(c.ancho_mm):''}</td><td class="sep"></td><td>${esc(c.tubo)}</td><td class="med">${medida(c.ancho_tubo)}</td><td class="sep"></td><td class="ok">${ok}</td>`
+  const fila=(c,ok)=>`<td class="dest">${esc(c.pedido)}</td><td class="dest">${esc(c.orden)}</td><td>${esc(c.perfil)}</td><td>${esc(c.color)}</td>
+    <td class="med">${c.ancho_mm>0?fm(c.ancho_mm):''}</td><td class="sep"></td><td>${esc(c.tubo)}</td><td class="med">${medida(c.ancho_tubo)}</td>
+    <td class="sep"></td><td>${esc(c.enrolle)}</td><td>${esc(c.agrupacion)}</td><td class="sep"></td><td class="ok">${ok}</td>`
   let h=`<div class="paper"><div class="hd"><h3>HOJA DE CORTE</h3><div class="fecha">${meta.loteId?'Lote #'+meta.loteId+'<br>':''}Fecha: ${fechaDia(meta.fecha)}</div></div>
     <div class="sub">${esc(meta.linea||'')}${meta.paquete?' &nbsp;·&nbsp; '+esc(meta.paquete):''} &nbsp;·&nbsp; Riel NORMAL ${fm(A.largo_normal*1000)} m &nbsp;·&nbsp; Otros ${fm(A.largo_otro*1000)} m &nbsp;·&nbsp; Retal = sobrante de ${fm(A.retal_min*1000)} m o más</div>
     <div class="resumen"><span>RIELES NUEVOS: ${nR}</span><span>RETALES A SACAR DEL ESTANTE: ${nS}</span><span>RETALES A GUARDAR: ${nG}</span></div>
-    <table><thead><tr><th>PEDIDO</th><th>ORDEN</th><th>COLOR RIEL</th><th>ANCHO RIEL (m)</th><th class="sep"></th><th>TUBO</th><th>ANCHO TUBO (m)</th><th class="sep"></th><th>OK</th></tr></thead><tbody>`
+    <table><thead><tr><th>PEDIDO</th><th>ORDEN</th><th>PERFIL</th><th>COLOR RIEL</th><th>ANCHO RIEL (m)</th><th class="sep"></th><th>TUBO</th><th>ANCHO TUBO (m)</th><th class="sep"></th><th>ENROLLE</th><th>AGRUPACIÓN</th><th class="sep"></th><th>OK</th></tr></thead><tbody>`
   let paqAnt=null
   P.forEach(p=>{
-    if(p.paq!==paqAnt){h+=`<tr class="paq"><td colspan="9">PAQUETE&nbsp;&nbsp; ${esc(p.paq||meta.paquete||'')}</td></tr>`;paqAnt=p.paq}
+    if(p.paq!==paqAnt){h+=`<tr class="paq"><td colspan="13">PAQUETE&nbsp;&nbsp; ${esc(p.paq||meta.paquete||'')}</td></tr>`;paqAnt=p.paq}
     const top=p.tipo==='RETAL'
       ?(p.retal.deHoy?`TOMAR RETAL ${esc(codTxt(p.retal.codigo))} (${fm(p.largo)} m) &nbsp;(sale de una pieza anterior de esta hoja)`:`SACAR DEL ESTANTE: &nbsp;RETAL ${esc(codTxt(p.retal.codigo))} (${fm(p.largo)} m)`)
       :`RIEL NUEVO &nbsp;·&nbsp; ${fm(p.largo)} m`
-    h+=`<tr class="pz ${p.tipo==='RETAL'?'retal':'riel'}"><td colspan="9">PIEZA ${p.n} &nbsp;&nbsp;► &nbsp;${top}</td></tr>`
+    h+=`<tr class="pz ${p.tipo==='RETAL'?'retal':'riel'}"><td colspan="13">PIEZA ${p.n} &nbsp;&nbsp;► &nbsp;${top}</td></tr>`
     p.cortes.forEach(c=>{h+=`<tr class="cut">${fila(c,'☐')}</tr>`})
     const sob=`Sobrante ${fm(p.sobra)} m &nbsp;&nbsp;► &nbsp;`
-    if(p.accion.tipo==='GUARDAR')h+=`<tr class="ft guardar"><td colspan="9">${sob}GUARDAR RETAL ${esc(codTxt(p.accion.cod))} (${fm(p.accion.mm)} m) &nbsp;-&nbsp; ${p.accion.usadoEn?'NO va al estante: se usa en '+esc(p.accion.usadoEn):'marcar código y medida y llevar al estante &nbsp;&nbsp;[ &nbsp; ]'}</td></tr>`
-    else if(p.accion.tipo==='DESECHAR')h+=`<tr class="ft"><td colspan="9">${sob}desechar</td></tr>`
-    else h+=`<tr class="ft"><td colspan="9">Sin sobrante</td></tr>`
-    h+=`<tr class="gap"><td colspan="9"></td></tr>`
+    if(p.accion.tipo==='GUARDAR')h+=`<tr class="ft guardar"><td colspan="13">${sob}GUARDAR RETAL ${esc(codTxt(p.accion.cod))} (${fm(p.accion.mm)} m) &nbsp;-&nbsp; ${p.accion.usadoEn?'NO va al estante: se usa en '+esc(p.accion.usadoEn):'marcar código y medida y llevar al estante &nbsp;&nbsp;[ &nbsp; ]'}</td></tr>`
+    else if(p.accion.tipo==='DESECHAR')h+=`<tr class="ft"><td colspan="13">${sob}desechar</td></tr>`
+    else h+=`<tr class="ft"><td colspan="13">Sin sobrante</td></tr>`
+    h+=`<tr class="gap"><td colspan="13"></td></tr>`
   })
   if((plan.revisar||[]).length){
-    h+=`<tr class="paq"><td colspan="9">CORTES PARA REVISAR (no entran en esta hoja)</td></tr>`
-    plan.revisar.forEach(r=>{h+=`<tr class="rev"><td colspan="9">REVISAR: ${esc(r.motivo)}</td></tr><tr class="cut">${fila(r.corte,'')}</tr>`})
+    h+=`<tr class="paq"><td colspan="13">CORTES PARA REVISAR (no entran en esta hoja)</td></tr>`
+    plan.revisar.forEach(r=>{h+=`<tr class="rev"><td colspan="13">REVISAR: ${esc(r.motivo)}</td></tr><tr class="cut">${fila(r.corte,'')}</tr>`})
   }
   return h+'</tbody></table></div>'
 }
@@ -890,7 +900,8 @@ $('btn-agregar').onclick=()=>{
   $('m-error').textContent=''
   const at=$('m-anchotubo').value.trim()
   agregarCortes([{pedido:$('m-pedido').value.trim().toUpperCase(),orden:$('m-orden').value.trim().toUpperCase(),paquete:'',color,ancho_mm:mm,
-    tipo:$('m-tipo').value,tubo:$('m-tubo').value.trim(),ancho_tubo:at?(isNaN(num(at))?at:aMM(at)):''}],0,'el formulario')
+    tipo:$('m-tipo').value,tubo:$('m-tubo').value.trim(),ancho_tubo:at?(isNaN(num(at))?at:aMM(at)):'',
+    perfil:$('m-perfil').value.trim().toUpperCase(),enrolle:$('m-enrolle').value.trim().toUpperCase(),agrupacion:$('m-agrupacion').value.trim().toUpperCase()}],0,'el formulario')
   ;['m-pedido','m-orden','m-ancho','m-anchotubo'].forEach(id=>$(id).value='');$('m-ancho').focus()
 }
 $('btn-limpiar').onclick=()=>{cortes=[];resultado=null;$('results').innerHTML='';$('carga-status').textContent='';renderCortes()}
@@ -950,7 +961,8 @@ async function conectar(url,key){
   if(data.session)await entrarApp(data.session.user.email);else mostrar('login')
 }
 $('btn-conectar').onclick=async()=>{
-  const url=$('cfg-url').value.trim(),key=$('cfg-key').value.trim()
+  const url=$('cfg-url').value.trim().replace(/\/rest\/v1\/?$/i,'').replace(/\/+$/,''),key=$('cfg-key').value.trim()
+  $('cfg-url').value=url
   if(!url||!key){$('conn-error').textContent='Completa los dos campos.';return}
   try{localStorage.setItem(CFG_KEY,JSON.stringify({url,key}))}catch(e){}
   try{await conectar(url,key)}catch(e){$('conn-error').textContent='No se pudo conectar: '+(e.message||'revisa la URL y la clave.')}
