@@ -291,6 +291,7 @@
     <div class="row">
       <input type="text" id="n-color" placeholder="Color riel" list="lista-colores" style="text-transform:uppercase"/>
       <input type="text" id="n-largo" placeholder="Largo (m)" inputmode="decimal"/>
+      <select id="n-tipo"><option value="NORMAL">Riel 5,80 m (normal)</option><option value="CONTRARIO">Riel 6 m (contrario)</option></select>
       <input type="number" id="n-dias" placeholder="Días en el estante" min="0" value="0"/>
       <button class="btn-green" id="btn-nuevo-retal" style="flex:0 0 auto">+ Agregar retal</button>
     </div>
@@ -357,8 +358,8 @@
 (function(){
 'use strict'
 const CFG_KEY='rieles_supabase_config'
-const DEF={largo_normal:5.77,largo_otro:6,retal_min:0.8,tolerancia:0.2,edad_dias:15,sierra:0}
-const DESPUNTE_NORMAL_MM=30   // 3 cm que se quitan a cada riel NORMAL nuevo (5,80 -> 5,77): cuentan como desperdicio
+const DEF={largo_normal:5.77,largo_otro:5.97,retal_min:0.8,tolerancia:0.2,edad_dias:15,sierra:0}
+const DESPUNTE_MM=30   // 3 cm que se quitan a cada riel nuevo (NORMAL y otros tipos): cuentan como desperdicio
 
 let sb=null, api=null, aj={...DEF}
 let cortes=[], resultado=null
@@ -411,7 +412,7 @@ function crearApi(sb){
     disponibles:async()=>ok(await sb.from('retales').select('*').eq('estado','DISPONIBLE')),
     retalesDeLote:async id=>ok(await sb.from('retales').select('*').or(`lote_uso.eq.${id},lote_origen.eq.${id}`).order('codigo')),
     estadoRetal:async(id,estado)=>ok(await sb.from('retales').update({estado}).eq('id',id)),
-    crearRetal:async(color,mm,dias)=>ok(await sb.rpc('crear_retal',{p_color:color,p_largo_mm:mm,p_dias:dias})),
+    crearRetal:async(color,mm,dias,tipo)=>ok(await sb.rpc('crear_retal',{p_color:color,p_largo_mm:mm,p_dias:dias,p_tipo:tipo})),
     guardarPlan:async(l,r,n)=>ok(await sb.rpc('guardar_plan',{p_lote:l,p_reservar:r,p_nuevos:n})),
     lotes:async estado=>{let q=sb.from('lotes').select('*').order('fecha',{ascending:false}).limit(2000);if(estado)q=q.eq('estado',estado);return ok(await q)},
     confirmarLote:async id=>ok(await sb.rpc('confirmar_lote',{p_lote:id})),
@@ -436,7 +437,7 @@ function mochila(w,cap){
 function planificar(cortes,disponibles,aj){
   const K=Math.round(aj.sierra*1000),R=Math.round(aj.retal_min*1000),TOL=Math.round(aj.tolerancia*1000)
   const capN=Math.round(aj.largo_normal*1000),capO=Math.round(aj.largo_otro*1000)
-  const pool=disponibles.map(r=>({id:r.id,codigo:r.codigo,color:norm(r.color),mm:r.largo_mm,edad:diasDesde(r.fecha),usado:false,nuevo:false,usadoEn:'',origen:''}))
+  const pool=disponibles.map(r=>({id:r.id,codigo:r.codigo,color:norm(r.color),tipoRiel:norm(r.tipo_riel)||'NORMAL',mm:r.largo_mm,edad:diasDesde(r.fecha),usado:false,nuevo:false,usadoEn:'',origen:''}))
   let nTmp=0,nPieza=0
   const revisar=[],grupos=new Map()
   cortes.forEach(c=>{
@@ -446,12 +447,12 @@ function planificar(cortes,disponibles,aj){
     if(c.ancho_mm>cap){revisar.push({c,motivo:'El corte no cabe en un riel de '+fm(cap)+' m'});return}
     const paq=String(c.paquete||'').trim().toUpperCase()
     const key=paq+'|'+color+'|'+String(cap).padStart(5,'0')
-    if(!grupos.has(key))grupos.set(key,{paq,color,cap,items:[]})
+    if(!grupos.has(key))grupos.set(key,{paq,color,cap,tipoRiel:cap===capN?'NORMAL':'CONTRARIO',items:[]})
     grupos.get(key).items.push(c)
   })
-  function accionPara(rem,color,origen){
+  function accionPara(rem,color,tipoRiel,origen){
     if(rem>=R){nTmp++;const tmp='~N'+nTmp+'~'
-      pool.push({id:null,codigo:tmp,color,mm:rem,edad:0,usado:false,nuevo:true,usadoEn:'',origen})
+      pool.push({id:null,codigo:tmp,color,tipoRiel,mm:rem,edad:0,usado:false,nuevo:true,usadoEn:'',origen})
       return{tipo:'GUARDAR',cod:tmp,mm:rem}}
     return rem>0?{tipo:'DESECHAR'}:{tipo:'NADA'}
   }
@@ -464,7 +465,7 @@ function planificar(cortes,disponibles,aj){
     while(pend.length){
       const minMM=Math.min(...pend.map(p=>p.ancho_mm));let best=null
       for(const r of pool){
-        if(r.usado||r.color!==g.color||r.mm<minMM)continue
+        if(r.usado||r.color!==g.color||r.tipoRiel!==g.tipoRiel||r.mm<minMM)continue
         const sel=mochila(pend.map(p=>p.ancho_mm+K),r.mm+K);if(!sel.length)continue
         const sum=sel.reduce((a,j)=>a+pend[j].ancho_mm,0),rem=r.mm-sum-K*(sel.length-1)
         const w=rem>=R?0:rem,viejo=r.edad>=aj.edad_dias
@@ -478,7 +479,7 @@ function planificar(cortes,disponibles,aj){
         :best.rem<=0?'Aprovecha todo el retal'
         :best.rem>=R?'Usa el retal y lo que sobra se vuelve a guardar'
         :`Usa el retal y solo se desechan ${fm(best.rem)} m`
-      const accion=accionPara(best.rem,g.color,'Retal '+best.r.codigo)
+      const accion=accionPara(best.rem,g.color,g.tipoRiel,'Retal '+best.r.codigo)
       piezas.push({n:nPieza,paq:g.paq,color:g.color,tipo:'RETAL',retal:{id:best.r.id,codigo:best.r.codigo,deHoy:best.r.nuevo},
         largo:best.r.mm,cortes:best.sel.map(j=>cutInfo(pend[j])),uso:best.sum,sobra:best.rem,accion,motivo})
       const s=new Set(best.sel);pend=pend.filter((_,j)=>!s.has(j))
@@ -486,7 +487,7 @@ function planificar(cortes,disponibles,aj){
     // Fase 2: rieles nuevos
     let motivo=''
     if(pend.length){
-      const minMM=Math.min(...pend.map(p=>p.ancho_mm)),delColor=pool.filter(r=>!r.usado&&r.color===g.color)
+      const minMM=Math.min(...pend.map(p=>p.ancho_mm)),delColor=pool.filter(r=>!r.usado&&r.color===g.color&&r.tipoRiel===g.tipoRiel)
       motivo=!delColor.length?'No hay retales de este color'
         :!delColor.some(r=>r.mm>=minMM)?'Los retales disponibles son más cortos que los cortes'
         :`Ningún retal sirve sin desechar más de ${fm(TOL)} m`
@@ -495,8 +496,8 @@ function planificar(cortes,disponibles,aj){
       const sel=mochila(pend.map(p=>p.ancho_mm+K),g.cap+K);if(!sel.length)break
       const sum=sel.reduce((a,j)=>a+pend[j].ancho_mm,0),rem=g.cap-sum-K*(sel.length-1)
       nPieza++
-      const accion=accionPara(rem,g.color,'Riel nuevo - '+(g.paq||g.color)+' - pieza '+nPieza)
-      piezas.push({n:nPieza,paq:g.paq,color:g.color,tipo:'RIEL',largo:g.cap,despunte:g.cap===capN?DESPUNTE_NORMAL_MM:0,cortes:sel.map(j=>cutInfo(pend[j])),uso:sum,sobra:rem,accion,motivo})
+      const accion=accionPara(rem,g.color,g.tipoRiel,'Riel nuevo - '+(g.paq||g.color)+' - pieza '+nPieza)
+      piezas.push({n:nPieza,paq:g.paq,color:g.color,tipo:'RIEL',largo:g.cap,despunte:DESPUNTE_MM,cortes:sel.map(j=>cutInfo(pend[j])),uso:sum,sobra:rem,accion,motivo})
       const s=new Set(sel);pend=pend.filter((_,j)=>!s.has(j))
     }
   })
@@ -505,7 +506,7 @@ function planificar(cortes,disponibles,aj){
     if(p.accion.tipo==='GUARDAR'){const x=pool.find(r=>r.codigo===p.accion.cod);p.accion.usadoEn=x&&x.usado?x.usadoEn:''}
   })
   const reservar=pool.filter(p=>!p.nuevo&&p.usado).map(p=>({id:p.id,usado_en:p.usadoEn}))
-  const nuevos=pool.filter(p=>p.nuevo).map(p=>({tmp:p.codigo,color:p.color,largo_mm:p.mm,origen:p.origen,usado_en:p.usado?p.usadoEn:''}))
+  const nuevos=pool.filter(p=>p.nuevo).map(p=>({tmp:p.codigo,color:p.color,tipo_riel:p.tipoRiel,largo_mm:p.mm,origen:p.origen,usado_en:p.usado?p.usadoEn:''}))
   const met=metricas(piezas)
   return{piezas,revisar:revisar.map(x=>({motivo:x.motivo,corte:cutInfo(x.c)})),reservar,nuevos,met,
     ajustes:{largo_normal:aj.largo_normal,largo_otro:aj.largo_otro,retal_min:aj.retal_min}}
@@ -547,6 +548,7 @@ function mapearColumnas(h){
   if(c.orden<0)c.orden=idx(x=>x.includes('ORDEN'))
   if(c.color<0)c.color=idx(x=>x.includes('COLOR'))
   if(c.ancho<0)c.ancho=idx(x=>x.includes('ANCHO')&&!x.includes('TUBO')&&!x.includes('PERFIL'))
+  if(c.tipo<0&&c.enrolle>=0)c.tipo=c.enrolle   // ENROLLE CONTRARIO = riel de 6 m
   if(c.tipo<0&&h.length>19)c.tipoColT=true   // como la macro: tipo en la columna T
   return c
 }
@@ -781,7 +783,7 @@ async function cargarRetales(){
   const sel=$('f-color'),v=sel.value
   sel.innerHTML='<option value="">Todos los colores</option>'+colores.map(c=>`<option${c===v?' selected':''}>${esc(c)}</option>`).join('')
   const porColor={}
-  disp.forEach(r=>{const a=porColor[r.color]||(porColor[r.color]={n:0,mm:0,viejos:0});a.n++;a.mm+=r.largo_mm;if(diasDesde(r.fecha)>=aj.edad_dias)a.viejos++})
+  disp.forEach(r=>{const k=r.color+' · '+(r.tipo_riel==='CONTRARIO'?'riel 6 m':'riel 5,80 m'),a=porColor[k]||(porColor[k]={n:0,mm:0,viejos:0});a.n++;a.mm+=r.largo_mm;if(diasDesde(r.fecha)>=aj.edad_dias)a.viejos++})
   $('chips-colores').innerHTML=Object.keys(porColor).sort().map(c=>{const a=porColor[c];return`<div class="chip-color">${esc(c)}<b>${a.n} · ${fm(a.mm)} m</b>${a.viejos?`<span class="badge amber">${a.viejos} con ${aj.edad_dias}+ días</span>`:''}</div>`}).join('')||'<div class="hint">El estante está vacío.</div>'
   renderRetales();renderCortes()
 }
@@ -795,8 +797,8 @@ function renderRetales(){
     if(r.estado==='RESERVADO')return`<button class="btn-sm" data-est="NO ESTABA" data-id="${r.id}">No estaba</button>`
     return''
   }
-  $('tabla-retales').innerHTML=`<table class="tb"><thead><tr><th>Código</th><th>Color</th><th>Largo</th><th>Fecha</th><th>Días</th><th>Estado</th><th>Origen</th><th>Usado en</th><th></th></tr></thead><tbody>
-    ${lista.slice(0,800).map(r=>{const d=diasDesde(r.fecha);return`<tr><td><b>${esc(r.codigo)}</b></td><td>${esc(r.color)}</td><td class="n"><b>${fm(r.largo_mm)} m</b></td><td>${fechaDia(r.fecha+'T12:00:00')}</td>
+  $('tabla-retales').innerHTML=`<table class="tb"><thead><tr><th>Código</th><th>Color</th><th>Riel</th><th>Largo</th><th>Fecha</th><th>Días</th><th>Estado</th><th>Origen</th><th>Usado en</th><th></th></tr></thead><tbody>
+    ${lista.slice(0,800).map(r=>{const d=diasDesde(r.fecha);return`<tr><td><b>${esc(r.codigo)}</b></td><td>${esc(r.color)}</td><td>${r.tipo_riel==='CONTRARIO'?'6 m (contrario)':'5,80 m'}</td><td class="n"><b>${fm(r.largo_mm)} m</b></td><td>${fechaDia(r.fecha+'T12:00:00')}</td>
       <td class="n">${d}${r.estado==='DISPONIBLE'&&d>=aj.edad_dias?' <span class="badge amber">viejo</span>':''}</td><td>${badgeEstado(r.estado)}</td><td>${esc(r.origen)}</td><td>${esc(r.usado_en)}</td><td>${opciones(r)}</td></tr>`}).join('')}</tbody></table>`
 }
 
@@ -906,7 +908,7 @@ $('btn-agregar').onclick=()=>{
   $('m-error').textContent=''
   const at=$('m-anchotubo').value.trim()
   agregarCortes([{pedido:$('m-pedido').value.trim().toUpperCase(),orden:$('m-orden').value.trim().toUpperCase(),paquete:'',color,ancho_mm:mm,
-    tipo:$('m-tipo').value,tubo:$('m-tubo').value.trim(),ancho_tubo:at?(isNaN(num(at))?at:aMM(at)):'',
+    tipo:/CONTRARI/.test($('m-enrolle').value.toUpperCase())?'CONTRARIO':$('m-tipo').value,tubo:$('m-tubo').value.trim(),ancho_tubo:at?(isNaN(num(at))?at:aMM(at)):'',
     perfil:$('m-perfil').value.trim().toUpperCase(),
     ancho_perfil:(v=>v?(isNaN(num(v))?v:aMM(v)):'')($('m-anchoperfil').value.trim()),enrolle:$('m-enrolle').value.trim().toUpperCase(),agrupacion:$('m-agrupacion').value.trim().toUpperCase()}],0,'el formulario')
   ;['m-pedido','m-orden','m-ancho','m-anchotubo','m-anchoperfil'].forEach(id=>$(id).value='');$('m-ancho').focus()
@@ -939,7 +941,7 @@ $('btn-nuevo-retal').onclick=async()=>{
   const color=$('n-color').value.trim().toUpperCase(),mm=aMM($('n-largo').value),d=Math.max(0,parseInt($('n-dias').value||'0',10)||0)
   if(!color||!(mm>0)){$('n-error').textContent='Escribe el color y el largo en metros.';return}
   $('n-error').textContent=''
-  const cod=await seguro(()=>api.crearRetal(color,mm,d),'No se agregó el retal')
+  const cod=await seguro(()=>api.crearRetal(color,mm,d,$('n-tipo').value),'No se agregó el retal')
   toast('Retal '+cod+' agregado al estante');$('n-largo').value='';cargarRetales()
 }
 $('periodos').onclick=e=>{const b=e.target.closest('[data-p]');if(!b)return;periodo=b.dataset.p;document.querySelectorAll('.period-tab').forEach(x=>x.classList.toggle('active',x===b));renderHistorico()}
